@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Liza Accounting</title>
+</head>
+<body>
+
+<h1>Система создания фактур</h1>
+<p id="status">Подключение...</p>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+    authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+    projectId: "lizaaccounting-d48b7",
+    storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+    messagingSenderId: "407944794362",
+    appId: "1:407944794362:web:c646f7670a8717a3fab943",
+    measurementId: "G-K39J5EXT4V"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getFirestore(app);
+
+  const status = document.getElementById("status");
+
+  async function testConnection() {
+    try {
+      await setDoc(doc(db, "testCollection", "testDocument"), {
+        message: "Firebase работает!",
+        createdAt: new Date()
+      });
+
+      status.textContent = "Firebase подключён и запись создана ✅";
+    } catch (error) {
+      console.error(error);
+      status.textContent = "Ошибка подключения ❌";
+    }
+  }
+
+  testConnection();
+</script>
+
+</body>
+</html>
