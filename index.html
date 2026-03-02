@@ -6,13 +6,22 @@
 </head>
 <body>
 
-<h1>Система создания фактур</h1>
-<p id="status">Подключение...</p>
+<h2>Регистрация</h2>
+<input type="email" id="email" placeholder="Email">
+<input type="password" id="password" placeholder="Пароль">
+<button id="registerBtn">Зарегистрироваться</button>
+
+<h2>Логин</h2>
+<button id="loginBtn">Войти</button>
+
+<p id="status"></p>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
-  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } 
+    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc } 
+    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
@@ -20,31 +29,64 @@
     projectId: "lizaaccounting-d48b7",
     storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
     messagingSenderId: "407944794362",
-    appId: "1:407944794362:web:c646f7670a8717a3fab943",
-    measurementId: "G-K39J5EXT4V"
+    appId: "1:407944794362:web:c646f7670a8717a3fab943"
   };
 
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
   const db = getFirestore(app);
 
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
   const status = document.getElementById("status");
 
-  async function testConnection() {
+  // 🔹 Регистрация
+  document.getElementById("registerBtn").addEventListener("click", async () => {
     try {
-      await setDoc(doc(db, "testCollection", "testDocument"), {
-        message: "Firebase работает!",
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        emailInput.value,
+        passwordInput.value
+      );
+
+      const user = userCredential.user;
+
+      // создаём профиль в Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
         createdAt: new Date()
       });
 
-      status.textContent = "Firebase подключён и запись создана ✅";
+      status.textContent = "Регистрация успешна ✅";
     } catch (error) {
-      console.error(error);
-      status.textContent = "Ошибка подключения ❌";
+      status.textContent = error.message;
     }
-  }
+  });
 
-  testConnection();
+  // 🔹 Логин
+  document.getElementById("loginBtn").addEventListener("click", async () => {
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        emailInput.value,
+        passwordInput.value
+      );
+
+      status.textContent = "Вход выполнен ✅";
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  });
+
+  // 🔹 Проверка состояния авторизации
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("Пользователь вошёл:", user.uid);
+    } else {
+      console.log("Пользователь вышел");
+    }
+  });
+
 </script>
 
 </body>
