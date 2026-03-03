@@ -57,7 +57,7 @@
     <tr>
       <th>Услуга</th>
       <th>Кол-во</th>
-      <th>Цена</th>
+      <th>Цена  (Kč)</th>
       <th>Скидка %</th>
       <th>Сумма</th>
       <th>Удалить</th>
@@ -71,9 +71,9 @@
 <label>НДС %:</label>
 <input type="number" id="vatPercent" value="21"><br><br>
 
-<p>Subtotal: <span id="subtotal">0</span></p>
-<p>VAT: <span id="vatAmount">0</span></p>
-<p>Total: <span id="totalAmount">0</span></p>
+<p>Subtotal: <span id="subtotal">0</span> Kč</p>
+<p>VAT: <span id="vatAmount">0</span> Kč</p>
+<p>Total: <span id="totalAmount">0</span> Kč</p>
 
 <br>
 
@@ -163,9 +163,9 @@ function renderItems() {
       <tr>
         <td>${item.name}</td>
         <td>${item.quantity}</td>
-        <td>${item.price}</td>
+        <td>${item.price.toFixed(2)} Kč</td>
         <td>${item.discount}%</td>
-        <td>${item.total.toFixed(2)}</td>
+        <td>${item.total.toFixed(2)} Kč</td>
         <td><button onclick="removeItem(${index})">X</button></td>
       </tr>
     `;
@@ -186,9 +186,9 @@ function calculateTotals() {
   const vatAmount = subtotal * vatPercent / 100;
   const total = subtotal + vatAmount;
 
-  document.getElementById("subtotal").textContent = subtotal.toFixed(2);
-  document.getElementById("vatAmount").textContent = vatAmount.toFixed(2);
-  document.getElementById("totalAmount").textContent = total.toFixed(2);
+  document.getElementById("subtotal").textContent = subtotal.toFixed(2) + " Kč";
+  document.getElementById("vatAmount").textContent = vatAmount.toFixed(2) + " Kč";
+  document.getElementById("totalAmount").textContent = total.toFixed(2) + " Kč";
 }
 
 document.getElementById("addItemBtn").addEventListener("click", () => {
