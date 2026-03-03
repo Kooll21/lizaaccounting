@@ -262,7 +262,7 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
 document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   const doc = new window.jspdf.jsPDF();
 
-  doc.setFont("helvetica");
+  doc.setFont("Roboto");
   doc.setFontSize(18);
   doc.text("Faktura", 105, 20, { align: "center" });
 
@@ -334,6 +334,6 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   doc.save(`Faktura_${invoiceNumber}.pdf`);
 });
 </script>
-
+<script src="Roboto-Regular-normal.js"></script>
 </body>
 </html>
