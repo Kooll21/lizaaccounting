@@ -100,7 +100,8 @@ links.forEach(link => {
 <p>Mezisoučet: <span id="subtotal">0</span></p>
 <p>DPH: <span id="vatAmount">0</span></p>
 <p>Celkem: <span id="totalAmount">0</span></p>
-
+  
+<button id="downloadPdfBtn">Stáhnout PDF</button>
 <button id="saveInvoiceBtn">Uložit změny</button>
 <p id="statusMessage"></p>
 
@@ -260,6 +261,90 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
   await updateDoc(docRef, updatedData);
   statusMessage.textContent = "Faktura byla úspěšně aktualizována ✅";
   await loadInvoice(); // Обновляем таблицу и суммы
+});
+</script>
+  <script type="module">
+import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+
+// Кнопка для генерации PDF
+document.getElementById("downloadPdfBtn").addEventListener("click", () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // --- Заголовок ---
+  doc.setFontSize(18);
+  doc.text("Faktura", 105, 20, { align: "center" });
+
+  // --- Информация о выставителе ---
+  doc.setFontSize(12);
+  doc.text("Vystavuje:", 14, 35);
+  doc.text("Jelizaveta Lebeděva", 14, 42);
+  doc.text("Ocelařska 975/45", 14, 48);
+  doc.text("19000, Praha 9", 14, 54);
+
+  // --- Информация о клиенте ---
+  const clientName = document.getElementById("firstName").value + " " + document.getElementById("lastName").value;
+  doc.text("Klient:", 130, 35);
+  doc.text(clientName, 130, 42);
+  doc.text(document.getElementById("company").value, 130, 48);
+  doc.text(document.getElementById("street").value, 130, 54);
+  doc.text(document.getElementById("zip").value + ", " + document.getElementById("city").value, 130, 60);
+  doc.text(document.getElementById("country").value, 130, 66);
+  doc.text("DIČ/IČ: " + document.getElementById("vatId").value, 130, 72);
+
+  // --- Информация о фактуре ---
+  doc.text("Číslo faktury: " + document.getElementById("invoiceNumber").value, 14, 80);
+  doc.text("Datum vystavení: " + document.getElementById("issueDate").value, 14, 86);
+  doc.text("Datum splatnosti: " + document.getElementById("dueDate").value, 14, 92);
+  doc.text("Způsob platby: " + document.getElementById("paymentMethod").value, 14, 98);
+  doc.text("Status: " + document.getElementById("status").value, 14, 104);
+
+  // --- Таблица услуг ---
+  const items = [];
+  itemsTableBody.querySelectorAll("tr").forEach(row => {
+    const inputs = row.querySelectorAll("input");
+    const name = inputs[0].value;
+    const quantity = inputs[1].value;
+    const price = inputs[2].value;
+    const discount = inputs[3].value;
+    const total = (quantity * price * (1 - discount/100)).toFixed(2);
+    items.push([name, quantity, price, discount, total]);
+  });
+
+  // Заголовки таблицы
+  const startY = 115;
+  doc.setFontSize(12);
+  doc.text("Služba", 14, startY);
+  doc.text("Množství", 80, startY);
+  doc.text("Cena", 110, startY);
+  doc.text("Sleva %", 140, startY);
+  doc.text("Celkem", 170, startY);
+
+  let y = startY + 6;
+  items.forEach(item => {
+    doc.text(item[0], 14, y);
+    doc.text(item[1].toString(), 80, y);
+    doc.text(item[2].toString(), 110, y);
+    doc.text(item[3].toString(), 140, y);
+    doc.text(item[4].toString(), 170, y);
+    y += 6;
+  });
+
+  // --- Итоги ---
+  const subtotal = document.getElementById("subtotal").textContent;
+  const vatAmount = document.getElementById("vatAmount").textContent;
+  const totalAmount = document.getElementById("totalAmount").textContent;
+
+  y += 10;
+  doc.text("Mezisoučet: " + subtotal + " Kč", 140, y);
+  y += 6;
+  doc.text("DPH: " + vatAmount + " Kč", 140, y);
+  y += 6;
+  doc.text("Celkem: " + totalAmount + " Kč", 140, y);
+
+  // --- Скачиваем PDF ---
+  const invoiceNumber = document.getElementById("invoiceNumber").value || "invoice";
+  doc.save(Faktura_${invoiceNumber}.pdf);
 });
 </script>
 
