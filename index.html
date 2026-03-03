@@ -27,6 +27,14 @@
 
 <label>Срок оплаты:</label>
 <input type="date" id="dueDate"><br><br>
+  <label>Способ оплаты:</label>
+<select id="paymentMethod">
+  <option value="Hotovost">Hotovost</option>
+  <option value="Kartou">Kartou</option>
+  <option value="Prevodem na ucet" selected>Prevodem na ucet</option>
+</select>
+<br><br>
+
 
 <h3>Клиент</h3>
 <input type="text" id="firstName" placeholder="Имя"><br>
@@ -239,18 +247,20 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
     vatId: document.getElementById("vatId").value
   };
 
-  const invoiceData = {
-    invoiceNumber: document.getElementById("invoiceNumber").value,
-    issueDate: document.getElementById("issueDate").value,
-    dueDate: document.getElementById("dueDate").value,
-    client: clientData,
-    items,
-    subtotal,
-    vatPercent,
-    vatAmount,
-    total,
-    createdAt: new Date()
-  };
+const invoiceData = {
+  invoiceNumber: document.getElementById("invoiceNumber").value,
+  issueDate: document.getElementById("issueDate").value,
+  dueDate: document.getElementById("dueDate").value,
+  client: clientData,
+  items,
+  subtotal,
+  vatPercent,
+  vatAmount,
+  total,
+  currency: "CZK",
+  paymentMethod: document.getElementById("paymentMethod").value, // ✅ способ оплаты
+  createdAt: new Date()
+};
 
   await addDoc(collection(db, "users", user.uid, "invoices"), invoiceData);
 
