@@ -262,10 +262,10 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
 document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   const doc = new window.jspdf.jsPDF();
 
+  doc.setFont("helvetica");
   doc.setFontSize(18);
   doc.text("Faktura", 105, 20, { align: "center" });
 
-  // Выставитель
   doc.setFontSize(12);
   doc.text("Vystavuje:", 14, 35);
   doc.text("Jelizaveta Lebeděva", 14, 42);
