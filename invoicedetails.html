@@ -2,24 +2,21 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-  <nav style="background:#333;padding:10px;">
-  <a href="index.html" class="nav-link" style="color:white;margin-right:15px;text-decoration:none;">Nová faktura</a>
-  <a href="invoicelist.html" class="nav-link" style="color:white;text-decoration:none;">Seznam faktur</a>
-</nav>
-<hr>
-
-<script>
-// Подсветка активной ссылки
-const links = document.querySelectorAll(".nav-link");
-links.forEach(link => {
-  if (link.href === window.location.href) {
-    link.style.fontWeight = "bold";
-    link.style.textDecoration = "underline";
-  }
-});
-</script>
 <title>Detail faktury</title>
 <style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  nav {
+    background:#333;
+    padding:10px;
+  }
+  nav a {
+    color:white;
+    margin-right:15px;
+    text-decoration:none;
+  }
   input, select, button {
     margin: 5px 0;
     padding: 5px;
@@ -42,6 +39,13 @@ links.forEach(link => {
 </style>
 </head>
 <body>
+
+<!-- Меню сайта -->
+<nav>
+  <a href="index.html" class="nav-link">Nová faktura</a>
+  <a href="invoicelist.html" class="nav-link">Seznam faktur</a>
+</nav>
+<hr>
 
 <h2>Detail faktury</h2>
 <p id="authStatus"></p>
@@ -105,10 +109,22 @@ links.forEach(link => {
 <button id="saveInvoiceBtn">Uložit změny</button>
 <p id="statusMessage"></p>
 
+<script>
+// Подсветка активной ссылки меню
+const links = document.querySelectorAll(".nav-link");
+links.forEach(link => {
+  if (link.href === window.location.href) {
+    link.style.fontWeight = "bold";
+    link.style.textDecoration = "underline";
+  }
+});
+</script>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
 // --- Firebase config ---
 const firebaseConfig = {
@@ -135,8 +151,9 @@ if (!invoiceId) {
   alert("Nebyla vybrána faktura.");
 }
 
-// --- Отслеживание авторизации ---
 let currentUser = null;
+
+// --- Авторизация ---
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -214,7 +231,6 @@ async function loadInvoice() {
 document.getElementById("saveInvoiceBtn").addEventListener("click", async () => {
   const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
 
-  // Обновляем клиентские данные
   const clientData = {
     firstName: document.getElementById("firstName").value,
     lastName: document.getElementById("lastName").value,
@@ -226,7 +242,6 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
     vatId: document.getElementById("vatId").value
   };
 
-  // Обновляем items из таблицы
   const items = [];
   itemsTableBody.querySelectorAll("tr").forEach(row => {
     const inputs = row.querySelectorAll("input");
@@ -238,7 +253,6 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
     items.push({ name, quantity, price, discount, total });
   });
 
-  // Пересчитываем суммы
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const vatPercent = Number(document.getElementById("vatPercent").value);
   const vatAmount = subtotal * vatPercent / 100;
@@ -260,29 +274,24 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
 
   await updateDoc(docRef, updatedData);
   statusMessage.textContent = "Faktura byla úspěšně aktualizována ✅";
-  await loadInvoice(); // Обновляем таблицу и суммы
+  await loadInvoice();
 });
-</script>
-  <script type="module">
-import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
-// Кнопка для генерации PDF
+// --- Генерация PDF ---
 document.getElementById("downloadPdfBtn").addEventListener("click", () => {
-  const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  // --- Заголовок ---
   doc.setFontSize(18);
   doc.text("Faktura", 105, 20, { align: "center" });
 
-  // --- Информация о выставителе ---
+  // Выставитель
   doc.setFontSize(12);
   doc.text("Vystavuje:", 14, 35);
   doc.text("Jelizaveta Lebeděva", 14, 42);
   doc.text("Ocelařska 975/45", 14, 48);
   doc.text("19000, Praha 9", 14, 54);
 
-  // --- Информация о клиенте ---
+  // Клиент
   const clientName = document.getElementById("firstName").value + " " + document.getElementById("lastName").value;
   doc.text("Klient:", 130, 35);
   doc.text(clientName, 130, 42);
@@ -292,16 +301,16 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   doc.text(document.getElementById("country").value, 130, 66);
   doc.text("DIČ/IČ: " + document.getElementById("vatId").value, 130, 72);
 
-  // --- Информация о фактуре ---
+  // Фактура
   doc.text("Číslo faktury: " + document.getElementById("invoiceNumber").value, 14, 80);
   doc.text("Datum vystavení: " + document.getElementById("issueDate").value, 14, 86);
   doc.text("Datum splatnosti: " + document.getElementById("dueDate").value, 14, 92);
   doc.text("Způsob platby: " + document.getElementById("paymentMethod").value, 14, 98);
   doc.text("Status: " + document.getElementById("status").value, 14, 104);
 
-  // --- Таблица услуг ---
+  // Таблица
   const items = [];
-  itemsTableBody.querySelectorAll("tr").forEach(row => {
+  document.querySelectorAll("#itemsTableBody tr").forEach(row => {
     const inputs = row.querySelectorAll("input");
     const name = inputs[0].value;
     const quantity = inputs[1].value;
@@ -311,9 +320,7 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     items.push([name, quantity, price, discount, total]);
   });
 
-  // Заголовки таблицы
-  const startY = 115;
-  doc.setFontSize(12);
+  let startY = 115;
   doc.text("Služba", 14, startY);
   doc.text("Množství", 80, startY);
   doc.text("Cena", 110, startY);
@@ -330,7 +337,7 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     y += 6;
   });
 
-  // --- Итоги ---
+  // Итоги
   const subtotal = document.getElementById("subtotal").textContent;
   const vatAmount = document.getElementById("vatAmount").textContent;
   const totalAmount = document.getElementById("totalAmount").textContent;
@@ -342,9 +349,8 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   y += 6;
   doc.text("Celkem: " + totalAmount + " Kč", 140, y);
 
-  // --- Скачиваем PDF ---
   const invoiceNumber = document.getElementById("invoiceNumber").value || "invoice";
-  doc.save(Faktura_${invoiceNumber}.pdf);
+  doc.save(`Faktura_${invoiceNumber}.pdf`);
 });
 </script>
 
