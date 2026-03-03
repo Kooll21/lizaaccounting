@@ -82,25 +82,75 @@
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } 
-from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, collection, addDoc } 
 from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
-    authDomain: "lizaaccounting-d48b7.firebaseapp.com",
-    projectId: "lizaaccounting-d48b7",
-    storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
-    messagingSenderId: "407944794362",
-    appId: "1:407944794362:web:c646f7670a8717a3fab943"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+  projectId: "lizaaccounting-d48b7",
+  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+  messagingSenderId: "407944794362",
+  appId: "1:407944794362:web:c646f7670a8717a3fab943"
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 let items = [];
+
+
+// =========================
+// 🔐 AUTH SECTION
+// =========================
+
+// Слушатель состояния авторизации
+onAuthStateChanged(auth, (user) => {
+  const status = document.getElementById("authStatus");
+
+  if (user) {
+    status.textContent = "Вы вошли как: " + user.email;
+  } else {
+    status.textContent = "Вы не вошли в систему";
+  }
+});
+
+// Регистрация
+document.getElementById("registerBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    document.getElementById("authStatus").textContent = error.message;
+  }
+});
+
+// Логин
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    document.getElementById("authStatus").textContent = error.message;
+  }
+});
+
+
+// =========================
+// 💼 INVOICE LOGIC (ТВОЙ КОД БЕЗ ИЗМЕНЕНИЙ)
+// =========================
 
 function renderItems() {
   const tbody = document.querySelector("#itemsTable tbody");
@@ -171,7 +221,6 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
   const vatAmount = subtotal * vatPercent / 100;
   const total = subtotal + vatAmount;
 
-  // ✅ Отдельный объект клиента
   const clientData = {
     firstName: document.getElementById("firstName").value,
     lastName: document.getElementById("lastName").value,
@@ -200,9 +249,9 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 
   document.getElementById("invoiceStatusMessage").textContent = "Фактура создана ✅";
 });
-  
 
 </script>
+  
 
 </body>
 </html>
