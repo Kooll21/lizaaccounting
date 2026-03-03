@@ -14,17 +14,58 @@
 <h2>Логин</h2>
 <button id="loginBtn">Войти</button>
 
-<p id="status"></p>
+<p id="authStatus"></p>
+
+<hr>
+
+<h2>Новая фактура</h2>
+
+<input type="text" id="invoiceNumber" placeholder="Номер фактуры"><br><br>
+
+<label>Дата выставления:</label>
+<input type="date" id="issueDate"><br><br>
+
+<label>Срок оплаты:</label>
+<input type="date" id="dueDate"><br><br>
+
+<input type="text" id="client" placeholder="Клиент"><br><br>
+
+<input type="text" id="notes" placeholder="Примечание"><br><br>
+
+<input type="number" id="subtotal" placeholder="Сумма без НДС"><br><br>
+
+<input type="number" id="vat" placeholder="НДС"><br><br>
+
+<input type="number" id="total" placeholder="Итого" readonly><br><br>
+
+<select id="invoiceStatus">
+  <option value="draft">Черновик</option>
+  <option value="sent">Отправлена</option>
+  <option value="paid">Оплачена</option>
+</select><br><br>
+
+<button id="createInvoiceBtn">Созить фактуру</button>
+
+<p id="invoiceStatusMessage"></p>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } 
-    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc } 
-    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+  import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    onAuthStateChanged 
+  } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+  import { 
+    getFirestore, 
+    doc, 
+    setDoc, 
+    collection, 
+    addDoc 
+  } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+    apiKey: "YOUR_API_KEY",
     authDomain: "lizaaccounting-d48b7.firebaseapp.com",
     projectId: "lizaaccounting-d48b7",
     storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
@@ -38,7 +79,8 @@
 
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
-  const status = document.getElementById("status");
+  const authStatus = document.getElementById("authStatus");
+  const invoiceStatusMessage = document.getElementById("invoiceStatusMessage");
 
   // 🔹 Регистрация
   document.getElementById("registerBtn").addEventListener("click", async () => {
@@ -51,15 +93,14 @@
 
       const user = userCredential.user;
 
-      // создаём профиль в Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         createdAt: new Date()
       });
 
-      status.textContent = "Регистрация успешна ✅";
+      authStatus.textContent = "Регистрация успешна ✅";
     } catch (error) {
-      status.textContent = error.message;
+      authStatus.textContent = error.message;
     }
   });
 
@@ -72,9 +113,9 @@
         passwordInput.value
       );
 
-      status.textContent = "Вход выполнен ✅";
+      authStatus.textContent = "Вход выполнен ✅";
     } catch (error) {
-      status.textContent = error.message;
+      authStatus.textContent = error.message;
     }
   });
 
@@ -85,6 +126,58 @@
     } else {
       console.log("Пользователь вышел");
     }
+  });
+
+  // 🔹 Авторасчет total
+  const subtotalInput = document.getElementById("subtotal");
+  const vatInput = document.getElementById("vat");
+  const totalInput = document.getElementById("total");
+
+  function calculateTotal() {
+    const subtotal = Number(subtotalInput.value) || 0;
+    const vat = Number(vatInput.value) || 0;
+    totalInput.value = subtotal + vat;
+  }
+
+  subtotalInput.addEventListener("input", calculateTotal);
+  vatInput.addEventListener("input", calculateTotal);
+
+  // 🔹 Создание фактуры
+  document.getElementById("createInvoiceBtn").addEventListener("click", async () => {
+
+    const user = auth.currentUser;
+
+    if (!user) {
+      invoiceStatusMessage.textContent = "Сначала войдите в систему ❗";
+      return;
+    }
+
+    try {
+      const invoiceData = {
+        InvoiceNumber: document.getElementById("invoiceNumber").value,
+        IssueDate: document.getElementById("issueDate").value,
+        dueDate: document.getElementById("dueDate").value,
+        client: document.getElementById("client").value,
+        Notes: document.getElementById("notes").value,
+        subtotal: Number(subtotalInput.value),
+        vat: Number(vatInput.value),
+        total: Number(totalInput.value),
+        status: document.getElementById("invoiceStatus").value,
+        items: [],
+        createdAt: new Date()
+      };
+
+      await addDoc(
+        collection(db, "users", user.uid, "invoices"),
+        invoiceData
+      );
+
+      invoiceStatusMessage.textContent = "Фактура создана ✅";
+
+    } catch (error) {
+      invoiceStatusMessage.textContent = error.message;
+    }
+
   });
 
 </script>
