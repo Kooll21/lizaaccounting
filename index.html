@@ -46,6 +46,7 @@
 <input type="text" id="serviceName" placeholder="Название услуги">
 <input type="number" id="serviceQty" placeholder="Количество" value="1">
 <input type="number" id="servicePrice" placeholder="Цена">
+<input type="number" id="serviceDiscount" placeholder="Скидка %" value="0">
 <button id="addItemBtn">Добавить</button>
   
 
@@ -57,6 +58,7 @@
       <th>Услуга</th>
       <th>Кол-во</th>
       <th>Цена</th>
+      <th>Скидка %</th>
       <th>Сумма</th>
       <th>Удалить</th>
     </tr>
@@ -162,7 +164,8 @@ function renderItems() {
         <td>${item.name}</td>
         <td>${item.quantity}</td>
         <td>${item.price}</td>
-        <td>${item.total}</td>
+        <td>${item.discount}%</td>
+        <td>${item.total.toFixed(2)}</td>
         <td><button onclick="removeItem(${index})">X</button></td>
       </tr>
     `;
@@ -192,19 +195,23 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
   const name = document.getElementById("serviceName").value;
   const qty = Number(document.getElementById("serviceQty").value);
   const price = Number(document.getElementById("servicePrice").value);
+  const discount = Number(document.getElementById("serviceDiscount").value) || 0; // новая скидка
 
   if (!name || !price) return;
 
-  const total = qty * price;
+  // Рассчитываем итоговую сумму с учётом скидки
+  const total = qty * price * (1 - discount / 100);
 
-  items.push({ name, quantity: qty, price, total });
+  items.push({ name, quantity: qty, price, discount, total });
 
   renderItems();
 
   document.getElementById("serviceName").value = "";
   document.getElementById("serviceQty").value = 1;
   document.getElementById("servicePrice").value = "";
+  document.getElementById("serviceDiscount").value = 0;
 });
+  
 
 document.getElementById("vatPercent").addEventListener("input", calculateTotals);
 
