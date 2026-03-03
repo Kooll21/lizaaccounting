@@ -1,74 +1,73 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="cs">
 <head>
 <meta charset="UTF-8">
 <title>Liza Accounting</title>
 </head>
 <body>
 
-<h2>Регистрация</h2>
+<h2>Registrace</h2>
 <input type="email" id="email" placeholder="Email">
-<input type="password" id="password" placeholder="Пароль">
-<button id="registerBtn">Зарегистрироваться</button>
+<input type="password" id="password" placeholder="Heslo">
+<button id="registerBtn">Registrovat</button>
 
-<h2>Логин</h2>
-<button id="loginBtn">Войти</button>
+<h2>Přihlášení</h2>
+<button id="loginBtn">Přihlásit se</button>
 
 <p id="authStatus"></p>
 
 <hr>
 
-<h2>Новая фактура</h2>
+<h2>Nová faktura</h2>
 
-<input type="text" id="invoiceNumber" placeholder="Номер фактуры"><br><br>
+<input type="text" id="invoiceNumber" placeholder="Číslo faktury"><br><br>
 
-<label>Дата выставления:</label>
+<label>Datum vystavení:</label>
 <input type="date" id="issueDate"><br><br>
 
-<label>Срок оплаты:</label>
+<label>Datum splatnosti:</label>
 <input type="date" id="dueDate"><br><br>
-  <label>Способ оплаты:</label>
+
+<label>Způsob platby:</label>
 <select id="paymentMethod">
   <option value="Hotovost">Hotovost</option>
   <option value="Kartou">Kartou</option>
-  <option value="Prevodem na ucet" selected>Prevodem na ucet</option>
+  <option value="Prevodem na ucet" selected>Převodem na účet</option>
 </select>
 <br><br>
 
+<h3>Klient</h3>
+<input type="text" id="firstName" placeholder="Jméno"><br>
+<input type="text" id="lastName" placeholder="Příjmení"><br>
+<input type="text" id="company" placeholder="Firma (pokud je)"><br><br>
 
-<h3>Клиент</h3>
-<input type="text" id="firstName" placeholder="Имя"><br>
-<input type="text" id="lastName" placeholder="Фамилия"><br>
-<input type="text" id="company" placeholder="Компания (если есть)"><br><br>
-
-<input type="text" id="street" placeholder="Улица и номер"><br><br>
-<input type="text" id="city" placeholder="Город"><br><br>
-<input type="text" id="zip" placeholder="Индекс"><br><br>
-<input type="text" id="country" placeholder="Страна"><br><br>
-<input type="text" id="vatId" placeholder="VAT / ICO"><br><br>
+<input type="text" id="street" placeholder="Ulice a číslo"><br><br>
+<input type="text" id="city" placeholder="Město"><br><br>
+<input type="text" id="zip" placeholder="PSČ"><br><br>
+<input type="text" id="country" placeholder="Země"><br><br>
+<input type="text" id="vatId" placeholder="DIČ / IČ"><br><br>
 
 <hr>
 
-<h3>Добавить услугу</h3>
+<h3>Přidat službu</h3>
 
-<input type="text" id="serviceName" placeholder="Название услуги">
-<input type="number" id="serviceQty" placeholder="Количество" value="1">
-<input type="number" id="servicePrice" placeholder="Цена">
-<input type="number" id="serviceDiscount" placeholder="Скидка %" value="0">
-<button id="addItemBtn">Добавить</button>
-  
+<input type="text" id="serviceName" placeholder="Název služby">
+<input type="number" id="serviceQty" placeholder="Množství" value="1">
+<input type="number" id="servicePrice" placeholder="Cena">
+<input type="number" id="serviceDiscount" placeholder="Sleva %" value="0">
+<button id="addItemBtn">Přidat</button>
 
 <br><br>
 
 <table border="1" id="itemsTable">
   <thead>
     <tr>
-      <th>Услуга</th>
-      <th>Кол-во</th>
-      <th>Цена  (Kč)</th>
-      <th>Скидка %</th>
-      <th>Сумма</th>
-      <th>Удалить</th>
+      <th>Služba</th>
+      <th>Množství</th>
+      <th>Cena (Kč)</th>
+      <th>Sleva %</th>
+      <th>Celkem (Kč)</th>
+      <th>Odstranit</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -76,20 +75,22 @@
 
 <br>
 
-<label>НДС %:</label>
+<label>DPH %:</label>
 <input type="number" id="vatPercent" value="21"><br><br>
 
-<p>Subtotal: <span id="subtotal">0</span></p>
-<p>VAT: <span id="vatAmount">0</span></p>
-<p>Total: <span id="totalAmount">0</span></p>
+<p>Mezisoučet: <span id="subtotal">0</span> Kč</p>
+<p>DPH: <span id="vatAmount">0</span> Kč</p>
+<p>Celkem: <span id="totalAmount">0</span> Kč</p>
 
 <br>
 
-<button id="createInvoiceBtn">Создать фактуру</button>
+<button id="createInvoiceBtn">Vytvořit fakturu</button>
 
 <p id="invoiceStatusMessage"></p>
 
 <script type="module">
+// --- tady zůstává tvůj původní JS kód s Firebase, auth, fakturou a položkami ---
+// jen textové hlášky (např. status) překládáme níže
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { 
@@ -117,23 +118,17 @@ const db = getFirestore(app);
 
 let items = [];
 
-
-// =========================
-// 🔐 AUTH SECTION
-// =========================
-
-// Слушатель состояния авторизации
+// --- AUTH SECTION ---
 onAuthStateChanged(auth, (user) => {
   const status = document.getElementById("authStatus");
 
   if (user) {
-    status.textContent = "Вы вошли как: " + user.email;
+    status.textContent = "Přihlášen jako: " + user.email;
   } else {
-    status.textContent = "Вы не вошли в систему";
+    status.textContent = "Nepřihlášen";
   }
 });
 
-// Регистрация
 document.getElementById("registerBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -145,7 +140,6 @@ document.getElementById("registerBtn").addEventListener("click", async () => {
   }
 });
 
-// Логин
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -157,11 +151,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   }
 });
 
-
-// =========================
-// 💼 INVOICE LOGIC (ТВОЙ КОД БЕЗ ИЗМЕНЕНИЙ)
-// =========================
-
+// --- INVOICE LOGIC ---
 function renderItems() {
   const tbody = document.querySelector("#itemsTable tbody");
   tbody.innerHTML = "";
@@ -203,11 +193,10 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
   const name = document.getElementById("serviceName").value;
   const qty = Number(document.getElementById("serviceQty").value);
   const price = Number(document.getElementById("servicePrice").value);
-  const discount = Number(document.getElementById("serviceDiscount").value) || 0; // новая скидка
+  const discount = Number(document.getElementById("serviceDiscount").value) || 0;
 
   if (!name || !price) return;
 
-  // Рассчитываем итоговую сумму с учётом скидки
   const total = qty * price * (1 - discount / 100);
 
   items.push({ name, quantity: qty, price, discount, total });
@@ -219,15 +208,13 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
   document.getElementById("servicePrice").value = "";
   document.getElementById("serviceDiscount").value = 0;
 });
-  
 
 document.getElementById("vatPercent").addEventListener("input", calculateTotals);
 
 document.getElementById("createInvoiceBtn").addEventListener("click", async () => {
-
   const user = auth.currentUser;
   if (!user) {
-    alert("Войдите в систему");
+    alert("Přihlaste se prosím");
     return;
   }
 
@@ -247,28 +234,27 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
     vatId: document.getElementById("vatId").value
   };
 
-const invoiceData = {
-  invoiceNumber: document.getElementById("invoiceNumber").value,
-  issueDate: document.getElementById("issueDate").value,
-  dueDate: document.getElementById("dueDate").value,
-  client: clientData,
-  items,
-  subtotal,
-  vatPercent,
-  vatAmount,
-  total,
-  currency: "CZK",
-  paymentMethod: document.getElementById("paymentMethod").value, // ✅ способ оплаты
-  createdAt: new Date()
-};
+  const invoiceData = {
+    invoiceNumber: document.getElementById("invoiceNumber").value,
+    issueDate: document.getElementById("issueDate").value,
+    dueDate: document.getElementById("dueDate").value,
+    client: clientData,
+    items,
+    subtotal,
+    vatPercent,
+    vatAmount,
+    total,
+    currency: "CZK",
+    paymentMethod: document.getElementById("paymentMethod").value,
+    createdAt: new Date()
+  };
 
   await addDoc(collection(db, "users", user.uid, "invoices"), invoiceData);
 
-  document.getElementById("invoiceStatusMessage").textContent = "Фактура создана ✅";
+  document.getElementById("invoiceStatusMessage").textContent = "Faktura byla vytvořena ✅";
 });
 
 </script>
-  
 
 </body>
 </html>
