@@ -4,38 +4,13 @@
 <meta charset="UTF-8">
 <title>Detail faktury</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-  }
-  nav {
-    background:#333;
-    padding:10px;
-  }
-  nav a {
-    color:white;
-    margin-right:15px;
-    text-decoration:none;
-  }
-  input, select, button {
-    margin: 5px 0;
-    padding: 5px;
-    width: 100%;
-    max-width: 400px;
-  }
-  table {
-    border-collapse: collapse;
-    width: 80%;
-    margin-top: 10px;
-  }
-  th, td {
-    border: 1px solid #999;
-    padding: 8px;
-    text-align: left;
-  }
-  th {
-    background-color: #f2f2f2;
-  }
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  nav { background:#333; padding:10px; }
+  nav a { color:white; margin-right:15px; text-decoration:none; }
+  input, select, button { margin: 5px 0; padding: 5px; width: 100%; max-width: 400px; }
+  table { border-collapse: collapse; width: 80%; margin-top: 10px; }
+  th, td { border: 1px solid #999; padding: 8px; text-align: left; }
+  th { background-color: #f2f2f2; }
 </style>
 </head>
 <body>
@@ -105,8 +80,9 @@
 <button id="saveInvoiceBtn">Uložit změny</button>
 <p id="statusMessage"></p>
 
-<!-- jsPDF через глобальный объект -->
+<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="Roboto-Regular-normal.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
@@ -131,14 +107,12 @@ const authStatus = document.getElementById("authStatus");
 const itemsTableBody = document.getElementById("itemsTableBody");
 const statusMessage = document.getElementById("statusMessage");
 
-// --- Получаем invoiceId из URL ---
 const params = new URLSearchParams(window.location.search);
 const invoiceId = params.get("invoiceId");
 if (!invoiceId) alert("Nebyla vybrána faktura.");
 
 let currentUser = null;
 
-// --- Авторизация ---
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -149,16 +123,12 @@ onAuthStateChanged(auth, async (user) => {
     const email = prompt("Zadejte email:");
     const password = prompt("Zadejte heslo:");
     if (email && password) {
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (err) {
-        alert("Chyba přihlášení: " + err.message);
-      }
+      try { await signInWithEmailAndPassword(auth, email, password); }
+      catch (err) { alert("Chyba přihlášení: " + err.message); }
     }
   }
 });
 
-// --- Загрузка фактуры ---
 async function loadInvoice() {
   const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
   const docSnap = await getDoc(docRef);
@@ -208,7 +178,6 @@ async function loadInvoice() {
   document.getElementById("totalAmount").textContent = totalAmount.toFixed(2);
 }
 
-// --- Сохранение изменений ---
 document.getElementById("saveInvoiceBtn").addEventListener("click", async () => {
   const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
 
@@ -258,11 +227,11 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
   await loadInvoice();
 });
 
-// --- Генерация PDF ---
 document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   const doc = new window.jspdf.jsPDF();
 
-  doc.setFont("Roboto");
+  // Используем подключенный шрифт Roboto
+  doc.setFont("Roboto", "normal");
   doc.setFontSize(18);
   doc.text("Faktura", 105, 20, { align: "center" });
 
@@ -272,7 +241,6 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   doc.text("Ocelařska 975/45", 14, 48);
   doc.text("19000, Praha 9", 14, 54);
 
-  // Клиент
   const clientName = document.getElementById("firstName").value + " " + document.getElementById("lastName").value;
   doc.text("Klient:", 130, 35);
   doc.text(clientName, 130, 42);
@@ -282,14 +250,12 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   doc.text(document.getElementById("country").value, 130, 66);
   doc.text("DIČ/IČ: " + document.getElementById("vatId").value, 130, 72);
 
-  // Фактура
   doc.text("Číslo faktury: " + document.getElementById("invoiceNumber").value, 14, 80);
   doc.text("Datum vystavení: " + document.getElementById("issueDate").value, 14, 86);
   doc.text("Datum splatnosti: " + document.getElementById("dueDate").value, 14, 92);
   doc.text("Způsob platby: " + document.getElementById("paymentMethod").value, 14, 98);
   doc.text("Status: " + document.getElementById("status").value, 14, 104);
 
-  // Таблица услуг
   const items = [];
   document.querySelectorAll("#itemsTableBody tr").forEach(row => {
     const inputs = row.querySelectorAll("input");
@@ -318,7 +284,6 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     y += 6;
   });
 
-  // Итоги
   const subtotal = document.getElementById("subtotal").textContent;
   const vatAmount = document.getElementById("vatAmount").textContent;
   const totalAmount = document.getElementById("totalAmount").textContent;
@@ -334,6 +299,5 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   doc.save(`Faktura_${invoiceNumber}.pdf`);
 });
 </script>
-<script src="Roboto-Regular-normal.js"></script>
 </body>
 </html>
