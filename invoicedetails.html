@@ -2,20 +2,23 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Detail faktury</title>
+
+<!-- pdfMake -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.min.js"></script>
+
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; }
-  nav { background:#333; padding:10px; }
-  nav a { color:white; margin-right:15px; text-decoration:none; }
-  input, select, button {
-    margin: 5px 0;
-    padding: 5px;
-    width: 100%;
-    max-width: 400px;
-  }
-  table { border-collapse: collapse; width: 80%; margin-top: 10px; }
-  th, td { border: 1px solid #999; padding: 8px; text-align: left; }
-  th { background-color: #f2f2f2; }
+body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin:auto; background:#f9f9f9; }
+nav { background:#333; padding:10px; }
+nav a { color:white; margin-right:15px; text-decoration:none; }
+input, select, button { margin:5px 0; padding:5px; width:100%; max-width:400px; }
+table { border-collapse: collapse; width:100%; margin-top:10px; background:white; }
+th, td { border:1px solid #999; padding:8px; text-align:left; }
+th { background-color:#f2f2f2; }
+button { background:#2980b9; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; }
+button:hover { background:#1f6391; }
 </style>
 </head>
 <body>
@@ -25,18 +28,13 @@
   <a href="invoicelist.html">Seznam faktur</a>
 </nav>
 
-<hr>
-
 <h2>Detail faktury</h2>
 <p id="authStatus"></p>
 
 <h3>Informace o faktuře</h3>
-<label>Číslo faktury:</label>
-<input type="text" id="invoiceNumber">
-<label>Datum vystavení:</label>
-<input type="date" id="issueDate">
-<label>Datum splatnosti:</label>
-<input type="date" id="dueDate">
+<label>Číslo faktury:</label><input type="text" id="invoiceNumber">
+<label>Datum vystavení:</label><input type="date" id="issueDate">
+<label>Datum splatnosti:</label><input type="date" id="dueDate">
 <label>Způsob platby:</label>
 <select id="paymentMethod">
   <option value="Hotovost">Hotovost</option>
@@ -74,24 +72,21 @@
 <tbody id="itemsTableBody"></tbody>
 </table>
 
-<label>DPH %:</label>
-<input type="number" id="vatPercent">
-
+<label>DPH %:</label><input type="number" id="vatPercent">
 <p>Mezisoučet: <span id="subtotal">0</span></p>
 <p>DPH: <span id="vatAmount">0</span></p>
 <p>Celkem: <span id="totalAmount">0</span></p>
 
-<button id="downloadPdfBtn">Stáhnout PDF</button>
 <button id="saveInvoiceBtn">Uložit změny</button>
+<button id="downloadPdfBtn">Stáhnout PDF</button>
 <p id="statusMessage"></p>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
+// --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
   authDomain: "lizaaccounting-d48b7.firebaseapp.com",
@@ -105,35 +100,37 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+const authStatus = document.getElementById("authStatus");
 const itemsTableBody = document.getElementById("itemsTableBody");
 const statusMessage = document.getElementById("statusMessage");
 
 const params = new URLSearchParams(window.location.search);
 const invoiceId = params.get("invoiceId");
+if (!invoiceId) alert("Nebyla vybrána faktura.");
 
 let currentUser = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
-    document.getElementById("authStatus").textContent = "Přihlášen jako: " + user.email;
+    authStatus.textContent = "Přihlášen jako: " + user.email;
     await loadInvoice();
   } else {
+    authStatus.textContent = "Nepřihlášen. Prosím přihlašte se.";
     const email = prompt("Zadejte email:");
     const password = prompt("Zadejte heslo:");
-    if (email && password) await signInWithEmailAndPassword(auth, email, password);
+    if (email && password) {
+      try { await signInWithEmailAndPassword(auth, email, password); await loadInvoice(); } 
+      catch (err) { alert("Chyba přihlášení: " + err.message); }
+    }
   }
 });
 
 async function loadInvoice() {
-  if (!invoiceId) return alert("Nebyla vybrána faktura.");
-
   const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
-  const snap = await getDoc(docRef);
-
-  if (!snap.exists()) return alert("Faktura nenalezena!");
-
-  const invoice = snap.data();
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) { alert("Faktura nenalezena!"); return; }
+  const invoice = docSnap.data();
 
   document.getElementById("invoiceNumber").value = invoice.invoiceNumber || "";
   document.getElementById("issueDate").value = invoice.issueDate || "";
@@ -142,18 +139,15 @@ async function loadInvoice() {
   document.getElementById("status").value = invoice.status || "unpaid";
 
   const client = invoice.client || {};
-  Object.keys(client).forEach(key => {
-    const el = document.getElementById(key);
-    if (el) el.value = client[key];
+  ["firstName","lastName","company","street","city","zip","country","vatId"].forEach(k => {
+    document.getElementById(k).value = client[k] || "";
   });
 
   itemsTableBody.innerHTML = "";
   let subtotal = 0;
-
   (invoice.items || []).forEach(item => {
-    const total = item.total || item.quantity * item.price;
+    const total = item.total || (item.quantity * item.price * (1 - item.discount/100));
     subtotal += total;
-
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><input value="${item.name}"></td>
@@ -167,7 +161,6 @@ async function loadInvoice() {
 
   const vatPercent = invoice.vatPercent || 21;
   const vatAmount = subtotal * vatPercent / 100;
-
   document.getElementById("vatPercent").value = vatPercent;
   document.getElementById("subtotal").textContent = subtotal.toFixed(2);
   document.getElementById("vatAmount").textContent = vatAmount.toFixed(2);
@@ -177,117 +170,118 @@ async function loadInvoice() {
 document.getElementById("saveInvoiceBtn").addEventListener("click", async () => {
   const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
 
-  const clientData = {
-    firstName: firstName.value,
-    lastName: lastName.value,
-    company: company.value,
-    street: street.value,
-    city: city.value,
-    zip: zip.value,
-    country: country.value,
-    vatId: vatId.value
-  };
+  const clientData = {};
+  ["firstName","lastName","company","street","city","zip","country","vatId"].forEach(k => {
+    clientData[k] = document.getElementById(k).value;
+  });
 
   const items = [];
   itemsTableBody.querySelectorAll("tr").forEach(row => {
     const inputs = row.querySelectorAll("input");
+    const name = inputs[0].value;
     const quantity = Number(inputs[1].value);
     const price = Number(inputs[2].value);
     const discount = Number(inputs[3].value);
-    const total = quantity * price * (1 - discount / 100);
-
-    items.push({ name: inputs[0].value, quantity, price, discount, total });
+    const total = quantity * price * (1 - discount/100);
+    items.push({ name, quantity, price, discount, total });
   });
 
-  const subtotal = items.reduce((sum, i) => sum + i.total, 0);
-  const vatPercent = Number(vatPercent.value);
+  const subtotal = items.reduce((sum, i) => sum + i.total,0);
+  const vatPercent = Number(document.getElementById("vatPercent").value);
   const vatAmount = subtotal * vatPercent / 100;
 
-  await updateDoc(docRef, {
-    invoiceNumber: invoiceNumber.value,
-    issueDate: issueDate.value,
-    dueDate: dueDate.value,
-    paymentMethod: paymentMethod.value,
-    status: status.value,
+  const updatedData = {
+    invoiceNumber: document.getElementById("invoiceNumber").value,
+    issueDate: document.getElementById("issueDate").value,
+    dueDate: document.getElementById("dueDate").value,
+    paymentMethod: document.getElementById("paymentMethod").value,
+    status: document.getElementById("status").value,
     client: clientData,
     items,
     subtotal,
     vatPercent,
     vatAmount,
     total: subtotal + vatAmount
-  });
+  };
 
-  statusMessage.textContent = "Faktura byla aktualizována ✅";
+  await updateDoc(docRef, updatedData);
+  statusMessage.textContent = "Faktura byla úspěšně aktualizována ✅";
   await loadInvoice();
 });
 
+// --- PDF с pdfMake ---
 document.getElementById("downloadPdfBtn").addEventListener("click", () => {
-  const doc = new window.jspdf.jsPDF();
+  const invoiceNo = document.getElementById("invoiceNumber").value || "neuvedeno";
+  const issueDate = document.getElementById("issueDate").value || "";
+  const dueDate = document.getElementById("dueDate").value || "";
+  const paymentMethod = document.getElementById("paymentMethod").value || "";
+  const status = document.getElementById("status").value || "";
 
-  doc.setFontSize(18);
-  doc.text("Faktura", 105, 20, { align: "center" });
+  const clientName = document.getElementById("firstName").value + " " + document.getElementById("lastName").value;
+  const clientCompany = document.getElementById("company").value;
+  const clientStreet = document.getElementById("street").value;
+  const clientCity = document.getElementById("city").value;
+  const clientZip = document.getElementById("zip").value;
+  const clientCountry = document.getElementById("country").value;
+  const clientVAT = document.getElementById("vatId").value;
 
-  doc.setFontSize(12);
-  // Выставитель
-  doc.text("Vystavuje:", 14, 35);
-  doc.text("Jelizaveta Lebeděva", 14, 42);
-  doc.text("Ocelařska 975/45", 14, 48);
-  doc.text("19000, Praha 9", 14, 54);
+  const vatPercent = document.getElementById("vatPercent").value || 21;
+  const subtotal = parseFloat(document.getElementById("subtotal").textContent) || 0;
+  const vatAmount = parseFloat(document.getElementById("vatAmount").textContent) || 0;
+  const totalAmount = parseFloat(document.getElementById("totalAmount").textContent) || 0;
 
-  // Клиент
-  const clientName = firstName.value + " " + lastName.value;
-  doc.text("Klient:", 130, 35);
-  doc.text(clientName, 130, 42);
-  doc.text(company.value, 130, 48);
-  doc.text(street.value, 130, 54);
-  doc.text(zip.value + ", " + city.value, 130, 60);
-  doc.text(country.value, 130, 66);
-  doc.text("DIČ/IČ: " + vatId.value, 130, 72);
+  const tableBody = [
+    [
+      { text:'Služba', bold:true, fillColor:'#f0f0f0' },
+      { text:'Množství', bold:true, fillColor:'#f0f0f0', alignment:'right' },
+      { text:'Cena', bold:true, fillColor:'#f0f0f0', alignment:'right' },
+      { text:'Sleva %', bold:true, fillColor:'#f0f0f0', alignment:'right' },
+      { text:'Celkem', bold:true, fillColor:'#f0f0f0', alignment:'right' }
+    ]
+  ];
 
-  // Информация о фактуре
-  doc.text("Číslo faktury: " + invoiceNumber.value, 14, 80);
-  doc.text("Datum vystavení: " + issueDate.value, 14, 86);
-  doc.text("Datum splatnosti: " + dueDate.value, 14, 92);
-  doc.text("Způsob platby: " + paymentMethod.value, 14, 98);
-  doc.text("Status: " + status.value, 14, 104);
-
-  // Таблица услуг
-  let startY = 115;
-  doc.text("Služba", 14, startY);
-  doc.text("Množství", 80, startY);
-  doc.text("Cena", 110, startY);
-  doc.text("Sleva %", 140, startY);
-  doc.text("Celkem", 170, startY);
-
-  let y = startY + 6;
-  itemsTableBody.querySelectorAll("tr").forEach(row => {
-    const inputs = row.querySelectorAll("input");
+  itemsTableBody.querySelectorAll('tr').forEach(row=>{
+    const inputs = row.querySelectorAll('input');
     const name = inputs[0].value;
     const quantity = inputs[1].value;
     const price = inputs[2].value;
     const discount = inputs[3].value;
-    const total = (quantity * price * (1 - discount / 100)).toFixed(2);
-
-    doc.text(name, 14, y);
-    doc.text(quantity.toString(), 80, y);
-    doc.text(price.toString(), 110, y);
-    doc.text(discount.toString(), 140, y);
-    doc.text(total.toString(), 170, y);
-    y += 6;
+    const total = (quantity*price*(1-discount/100)).toFixed(2);
+    tableBody.push([
+      name,
+      { text: quantity, alignment:'right' },
+      { text: price, alignment:'right' },
+      { text: discount, alignment:'right' },
+      { text: total, alignment:'right' }
+    ]);
   });
 
-  // Итоги
-  y += 10;
-  doc.text("Mezisoučet: " + subtotal.textContent + " Kč", 140, y);
-  y += 6;
-  doc.text("DPH: " + vatAmount.textContent + " Kč", 140, y);
-  y += 6;
-  doc.text("Celkem: " + totalAmount.textContent + " Kč", 140, y);
+  const today = new Date().toLocaleDateString('cs-CZ',{ day:'numeric', month:'long', year:'numeric' });
 
-  doc.save(`Faktura_${invoiceNumber.value || "invoice"}.pdf`);
+  const docDefinition = {
+    content:[
+      { text:'FAKTURA', style:'header' },
+      { text:`Vystaveno dne ${today}`, alignment:'right', margin:[0,0,0,20] },
+      { text:'Fakturační údaje klienta:', style:'subheader' },
+      { text:`${clientName}\n${clientCompany}\n${clientStreet}\n${clientZip}, ${clientCity}\n${clientCountry}\nDIČ/IČ: ${clientVAT}`, margin:[0,0,0,20] },
+      { text:'Informace o faktuře:', style:'subheader' },
+      { text:`Číslo faktury: ${invoiceNo}\nDatum vystavení: ${issueDate}\nDatum splatnosti: ${dueDate}\nZpůsob platby: ${paymentMethod}\nStatus: ${status}`, margin:[0,0,0,20] },
+      { table:{ headerRows:1, widths:['*','auto','auto','auto','auto'], body: tableBody }, layout:'lightHorizontalLines', margin:[0,0,0,20] },
+      { text:`Mezisoučet: ${subtotal.toFixed(2)} Kč`, alignment:'right' },
+      { text:`DPH (${vatPercent}%): ${vatAmount.toFixed(2)} Kč`, alignment:'right' },
+      { text:`Celkem: ${totalAmount.toFixed(2)} Kč`, bold:true, alignment:'right' },
+      { text:'\n\nPodpis vystavitele: ________________________        Datum: _______________', margin:[0,40,0,0] }
+    ],
+    styles:{
+      header:{ fontSize:22, bold:true, alignment:'center', margin:[0,0,0,20] },
+      subheader:{ fontSize:14, bold:true }
+    },
+    defaultStyle:{ font:'Roboto', fontSize:12, lineHeight:1.5 },
+    pageMargins:[40,60,40,60]
+  };
+
+  pdfMake.createPdf(docDefinition).download(`Faktura_${invoiceNo}.pdf`);
 });
-
 </script>
-
 </body>
 </html>
