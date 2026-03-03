@@ -87,37 +87,33 @@ async function loadInvoices(uid) {
 
   invoiceTableBody.innerHTML = ""; // очистка таблицы
 
-// --- заменяем этот блок в loadInvoices или после получения snapshot ---
-snapshot.forEach(docSnap => {
-  const invoice = docSnap.data();
-  const clientName = invoice.client.firstName + " " + invoice.client.lastName;
-  const issueDate = invoice.issueDate || "";
-  const dueDate = invoice.dueDate || "";
-  const total = invoice.total ? invoice.total.toFixed(2) : "0.00";
-  const status = invoice.status || "unpaid";
+  snapshot.forEach(docSnap => {
+    const invoice = docSnap.data();
+    const clientName = invoice.client.firstName + " " + invoice.client.lastName;
+    const issueDate = invoice.issueDate || "";
+    const dueDate = invoice.dueDate || "";
+    const total = invoice.total ? invoice.total.toFixed(2) : "0.00";
+    const status = invoice.status || "unpaid";
 
-  const row = document.createElement("tr");
-  
-  // Добавляем атрибут data-id для ссылки на конкретную фактуру
-  row.setAttribute("data-id", docSnap.id);
+    const row = document.createElement("tr");
+    row.setAttribute("data-id", docSnap.id);
+    row.style.cursor = "pointer";
+    row.innerHTML = `
+      <td>${clientName}</td>
+      <td>${issueDate}</td>
+      <td>${dueDate}</td>
+      <td>${total} Kč</td>
+      <td>${status}</td>
+    `;
 
-  row.innerHTML = `
-    <td>${clientName}</td>
-    <td>${issueDate}</td>
-    <td>${dueDate}</td>
-    <td>${total} Kč</td>
-    <td>${status}</td>
-  `;
+    row.addEventListener("click", () => {
+      const invoiceId = docSnap.id;
+      window.location.href = `invoicedetails.html?invoiceId=${invoiceId}`;
+    });
 
-  // Делаем строку кликабельной
-  row.style.cursor = "pointer";
-  row.addEventListener("click", () => {
-    const invoiceId = docSnap.id;
-    window.location.href = `invoicedetails.html?invoiceId=${invoiceId}`;
+    invoiceTableBody.appendChild(row);
   });
-
-  invoiceTableBody.appendChild(row);
-});
+}
   
 </script>
 
