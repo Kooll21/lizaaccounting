@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Detail faktury</title>
+<style>
+  input, select, button {
+    margin: 5px 0;
+    padding: 5px;
+    width: 100%;
+    max-width: 400px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 80%;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid #999;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #f2f2f2;
+  }
+</style>
+</head>
+<body>
+
+<h2>Detail faktury</h2>
+<p id="authStatus"></p>
+
+<h3>Informace o faktuře</h3>
+<label>Číslo faktury:</label>
+<input type="text" id="invoiceNumber">
+
+<label>Datum vystavení:</label>
+<input type="date" id="issueDate">
+
+<label>Datum splatnosti:</label>
+<input type="date" id="dueDate">
+
+<label>Způsob platby:</label>
+<select id="paymentMethod">
+  <option value="Hotovost">Hotovost</option>
+  <option value="Kartou">Kartou</option>
+  <option value="Prevodem na ucet">Převodem na účet</option>
+</select>
+
+<label>Status:</label>
+<select id="status">
+  <option value="unpaid">Unpaid</option>
+  <option value="paid">Paid</option>
+  <option value="overdue">Overdue</option>
+</select>
+
+<h3>Klient</h3>
+<input type="text" id="firstName" placeholder="Jméno">
+<input type="text" id="lastName" placeholder="Příjmení">
+<input type="text" id="company" placeholder="Firma">
+<input type="text" id="street" placeholder="Ulice a číslo">
+<input type="text" id="city" placeholder="Město">
+<input type="text" id="zip" placeholder="PSČ">
+<input type="text" id="country" placeholder="Země">
+<input type="text" id="vatId" placeholder="DIČ / IČ">
+
+<h3>Položky faktury</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Název služby</th>
+      <th>Množství</th>
+      <th>Cena</th>
+      <th>Sleva %</th>
+      <th>Celkem</th>
+    </tr>
+  </thead>
+  <tbody id="itemsTableBody"></tbody>
+</table>
+
+<label>DPH %:</label>
+<input type="number" id="vatPercent">
+
+<p>Mezisoučet: <span id="subtotal">0</span></p>
+<p>DPH: <span id="vatAmount">0</span></p>
+<p>Celkem: <span id="totalAmount">0</span></p>
+
+<button id="saveInvoiceBtn">Uložit změny</button>
+<p id="statusMessage"></p>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+// --- Firebase config ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+  projectId: "lizaaccounting-d48b7",
+  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+  messagingSenderId: "407944794362",
+  appId: "1:407944794362:web:c646f7670a8717a3fab943"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const authStatus = document.getElementById("authStatus");
+const itemsTableBody = document.getElementById("itemsTableBody");
+const statusMessage = document.getElementById("statusMessage");
+
+// --- Получаем invoiceId из URL ---
+const params = new URLSearchParams(window.location.search);
+const invoiceId = params.get("invoiceId");
+if (!invoiceId) {
+  alert("Nebyla vybrána faktura.");
+}
+
+// --- Отслеживание авторизации ---
+let currentUser = null;
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    authStatus.textContent = "Přihlášen jako: " + user.email;
+    await loadInvoice();
+  } else {
+    authStatus.textContent = "Nepřihlášen. Prosím přihlašte se.";
+    const email = prompt("Zadejte email:");
+    const password = prompt("Zadejte heslo:");
+    if (email && password) {
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        alert("Chyba přihlášení: " + err.message);
+      }
+    }
+  }
+});
+
+// --- Загрузка фактуры ---
+async function loadInvoice() {
+  const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) {
+    alert("Faktura nenalezena!");
+    return;
+  }
+
+  const invoice = docSnap.data();
+
+  document.getElementById("invoiceNumber").value = invoice.invoiceNumber || "";
+  document.getElementById("issueDate").value = invoice.issueDate || "";
+  document.getElementById("dueDate").value = invoice.dueDate || "";
+  document.getElementById("paymentMethod").value = invoice.paymentMethod || "";
+  document.getElementById("status").value = invoice.status || "unpaid";
+
+  const client = invoice.client || {};
+  document.getElementById("firstName").value = client.firstName || "";
+  document.getElementById("lastName").value = client.lastName || "";
+  document.getElementById("company").value = client.company || "";
+  document.getElementById("street").value = client.street || "";
+  document.getElementById("city").value = client.city || "";
+  document.getElementById("zip").value = client.zip || "";
+  document.getElementById("country").value = client.country || "";
+  document.getElementById("vatId").value = client.vatId || "";
+
+  itemsTableBody.innerHTML = "";
+  let subtotal = 0;
+  const items = invoice.items || [];
+  items.forEach(item => {
+    const row = document.createElement("tr");
+    const total = item.total || (item.quantity * item.price * (1 - item.discount/100));
+    subtotal += total;
+    row.innerHTML = `
+      <td><input value="${item.name}"></td>
+      <td><input type="number" value="${item.quantity}"></td>
+      <td><input type="number" value="${item.price}"></td>
+      <td><input type="number" value="${item.discount}"></td>
+      <td>${total.toFixed(2)}</td>
+    `;
+    itemsTableBody.appendChild(row);
+  });
+
+  const vatPercent = invoice.vatPercent || 21;
+  const vatAmount = subtotal * vatPercent / 100;
+  const totalAmount = subtotal + vatAmount;
+
+  document.getElementById("vatPercent").value = vatPercent;
+  document.getElementById("subtotal").textContent = subtotal.toFixed(2);
+  document.getElementById("vatAmount").textContent = vatAmount.toFixed(2);
+  document.getElementById("totalAmount").textContent = totalAmount.toFixed(2);
+}
+
+// --- Сохранение изменений ---
+document.getElementById("saveInvoiceBtn").addEventListener("click", async () => {
+  const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
+
+  // Обновляем клиентские данные
+  const clientData = {
+    firstName: document.getElementById("firstName").value,
+    lastName: document.getElementById("lastName").value,
+    company: document.getElementById("company").value,
+    street: document.getElementById("street").value,
+    city: document.getElementById("city").value,
+    zip: document.getElementById("zip").value,
+    country: document.getElementById("country").value,
+    vatId: document.getElementById("vatId").value
+  };
+
+  // Обновляем items из таблицы
+  const items = [];
+  itemsTableBody.querySelectorAll("tr").forEach(row => {
+    const inputs = row.querySelectorAll("input");
+    const name = inputs[0].value;
+    const quantity = Number(inputs[1].value);
+    const price = Number(inputs[2].value);
+    const discount = Number(inputs[3].value);
+    const total = quantity * price * (1 - discount/100);
+    items.push({ name, quantity, price, discount, total });
+  });
+
+  // Пересчитываем суммы
+  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+  const vatPercent = Number(document.getElementById("vatPercent").value);
+  const vatAmount = subtotal * vatPercent / 100;
+  const totalAmount = subtotal + vatAmount;
+
+  const updatedData = {
+    invoiceNumber: document.getElementById("invoiceNumber").value,
+    issueDate: document.getElementById("issueDate").value,
+    dueDate: document.getElementById("dueDate").value,
+    paymentMethod: document.getElementById("paymentMethod").value,
+    status: document.getElementById("status").value,
+    client: clientData,
+    items,
+    subtotal,
+    vatPercent,
+    vatAmount,
+    total: totalAmount
+  };
+
+  await updateDoc(docRef, updatedData);
+  statusMessage.textContent = "Faktura byla úspěšně aktualizována ✅";
+  await loadInvoice(); // Обновляем таблицу и суммы
+});
+</script>
+
+</body>
+</html>
