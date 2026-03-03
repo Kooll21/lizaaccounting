@@ -31,7 +31,13 @@
 <h3>Клиент</h3>
 <input type="text" id="firstName" placeholder="Имя"><br>
 <input type="text" id="lastName" placeholder="Фамилия"><br>
-<input type="text" id="street" placeholder="Адрес"><br><br>
+<input type="text" id="company" placeholder="Компания (если есть)"><br><br>
+
+<input type="text" id="street" placeholder="Улица и номер"><br><br>
+<input type="text" id="city" placeholder="Город"><br><br>
+<input type="text" id="zip" placeholder="Индекс"><br><br>
+<input type="text" id="country" placeholder="Страна"><br><br>
+<input type="text" id="vatId" placeholder="VAT / ICO"><br><br>
 
 <hr>
 
@@ -41,6 +47,7 @@
 <input type="number" id="serviceQty" placeholder="Количество" value="1">
 <input type="number" id="servicePrice" placeholder="Цена">
 <button id="addItemBtn">Добавить</button>
+  
 
 <br><br>
 
@@ -164,15 +171,23 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
   const vatAmount = subtotal * vatPercent / 100;
   const total = subtotal + vatAmount;
 
+  // ✅ Отдельный объект клиента
+  const clientData = {
+    firstName: document.getElementById("firstName").value,
+    lastName: document.getElementById("lastName").value,
+    company: document.getElementById("company").value,
+    street: document.getElementById("street").value,
+    city: document.getElementById("city").value,
+    zip: document.getElementById("zip").value,
+    country: document.getElementById("country").value,
+    vatId: document.getElementById("vatId").value
+  };
+
   const invoiceData = {
-    InvoiceNumber: document.getElementById("invoiceNumber").value,
-    IssueDate: document.getElementById("issueDate").value,
+    invoiceNumber: document.getElementById("invoiceNumber").value,
+    issueDate: document.getElementById("issueDate").value,
     dueDate: document.getElementById("dueDate").value,
-    client: {
-      firstName: document.getElementById("firstName").value,
-      lastName: document.getElementById("lastName").value,
-      street: document.getElementById("street").value
-    },
+    client: clientData,
     items,
     subtotal,
     vatPercent,
@@ -185,6 +200,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 
   document.getElementById("invoiceStatusMessage").textContent = "Фактура создана ✅";
 });
+  
 
 </script>
 
