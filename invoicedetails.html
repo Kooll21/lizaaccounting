@@ -222,10 +222,71 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
 });
 
 document.getElementById("downloadPdfBtn").addEventListener("click", () => {
-  const docPDF = new window.jspdf.jsPDF();
-  docPDF.text("Faktura", 105, 20, { align: "center" });
-  docPDF.save("Faktura.pdf");
+  const doc = new window.jspdf.jsPDF();
+
+  doc.setFontSize(18);
+  doc.text("Faktura", 105, 20, { align: "center" });
+
+  doc.setFontSize(12);
+  // Выставитель
+  doc.text("Vystavuje:", 14, 35);
+  doc.text("Jelizaveta Lebeděva", 14, 42);
+  doc.text("Ocelařska 975/45", 14, 48);
+  doc.text("19000, Praha 9", 14, 54);
+
+  // Клиент
+  const clientName = firstName.value + " " + lastName.value;
+  doc.text("Klient:", 130, 35);
+  doc.text(clientName, 130, 42);
+  doc.text(company.value, 130, 48);
+  doc.text(street.value, 130, 54);
+  doc.text(zip.value + ", " + city.value, 130, 60);
+  doc.text(country.value, 130, 66);
+  doc.text("DIČ/IČ: " + vatId.value, 130, 72);
+
+  // Информация о фактуре
+  doc.text("Číslo faktury: " + invoiceNumber.value, 14, 80);
+  doc.text("Datum vystavení: " + issueDate.value, 14, 86);
+  doc.text("Datum splatnosti: " + dueDate.value, 14, 92);
+  doc.text("Způsob platby: " + paymentMethod.value, 14, 98);
+  doc.text("Status: " + status.value, 14, 104);
+
+  // Таблица услуг
+  let startY = 115;
+  doc.text("Služba", 14, startY);
+  doc.text("Množství", 80, startY);
+  doc.text("Cena", 110, startY);
+  doc.text("Sleva %", 140, startY);
+  doc.text("Celkem", 170, startY);
+
+  let y = startY + 6;
+  itemsTableBody.querySelectorAll("tr").forEach(row => {
+    const inputs = row.querySelectorAll("input");
+    const name = inputs[0].value;
+    const quantity = inputs[1].value;
+    const price = inputs[2].value;
+    const discount = inputs[3].value;
+    const total = (quantity * price * (1 - discount / 100)).toFixed(2);
+
+    doc.text(name, 14, y);
+    doc.text(quantity.toString(), 80, y);
+    doc.text(price.toString(), 110, y);
+    doc.text(discount.toString(), 140, y);
+    doc.text(total.toString(), 170, y);
+    y += 6;
+  });
+
+  // Итоги
+  y += 10;
+  doc.text("Mezisoučet: " + subtotal.textContent + " Kč", 140, y);
+  y += 6;
+  doc.text("DPH: " + vatAmount.textContent + " Kč", 140, y);
+  y += 6;
+  doc.text("Celkem: " + totalAmount.textContent + " Kč", 140, y);
+
+  doc.save(`Faktura_${invoiceNumber.value || "invoice"}.pdf`);
 });
+
 </script>
 
 </body>
