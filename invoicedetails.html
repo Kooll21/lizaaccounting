@@ -2,6 +2,22 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
+  <nav style="background:#333;padding:10px;">
+  <a href="index.html" class="nav-link" style="color:white;margin-right:15px;text-decoration:none;">Nová faktura</a>
+  <a href="invoicelist.html" class="nav-link" style="color:white;text-decoration:none;">Seznam faktur</a>
+</nav>
+<hr>
+
+<script>
+// Подсветка активной ссылки
+const links = document.querySelectorAll(".nav-link");
+links.forEach(link => {
+  if (link.href === window.location.href) {
+    link.style.fontWeight = "bold";
+    link.style.textDecoration = "underline";
+  }
+});
+</script>
 <title>Detail faktury</title>
 <style>
   input, select, button {
