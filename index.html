@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Liza Accounting</title>
+<meta charset="UTF-8">
+<title>Liza Accounting</title>
 </head>
 <body>
 
@@ -28,29 +28,45 @@
 <label>Срок оплаты:</label>
 <input type="date" id="dueDate"><br><br>
 
-<h3>Данные клиента</h3>
-
-<input type="text" id="firstName" placeholder="Имя"><br><br>
-<input type="text" id="lastName" placeholder="Фамилия"><br><br>
-<input type="text" id="company" placeholder="Компания (если есть)"><br><br>
-
-<input type="text" id="street" placeholder="Улица и номер"><br><br>
-<input type="text" id="city" placeholder="Город"><br><br>
-<input type="text" id="zip" placeholder="Индекс"><br><br>
-<input type="text" id="country" placeholder="Страна"><br><br>
-<input type="text" id="vatId" placeholder="VAT / ICO"><br><br>
+<h3>Клиент</h3>
+<input type="text" id="firstName" placeholder="Имя"><br>
+<input type="text" id="lastName" placeholder="Фамилия"><br>
+<input type="text" id="street" placeholder="Адрес"><br><br>
 
 <hr>
 
-<input type="number" id="subtotal" placeholder="Сумма без НДС"><br><br>
-<input type="number" id="vat" placeholder="НДС"><br><br>
-<input type="number" id="total" placeholder="Итого" readonly><br><br>
+<h3>Добавить услугу</h3>
 
-<select id="invoiceStatus">
-  <option value="draft">Черновик</option>
-  <option value="sent">Отправлена</option>
-  <option value="paid">Оплачена</option>
-</select><br><br>
+<input type="text" id="serviceName" placeholder="Название услуги">
+<input type="number" id="serviceQty" placeholder="Количество" value="1">
+<input type="number" id="servicePrice" placeholder="Цена">
+<button id="addItemBtn">Добавить</button>
+
+<br><br>
+
+<table border="1" id="itemsTable">
+  <thead>
+    <tr>
+      <th>Услуга</th>
+      <th>Кол-во</th>
+      <th>Цена</th>
+      <th>Сумма</th>
+      <th>Удалить</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<br>
+
+<label>НДС %:</label>
+<input type="number" id="vatPercent" value="21"><br><br>
+
+<p>Subtotal: <span id="subtotal">0</span></p>
+<p>VAT: <span id="vatAmount">0</span></p>
+<p>Total: <span id="totalAmount">0</span></p>
+
+<br>
 
 <button id="createInvoiceBtn">Создать фактуру</button>
 
@@ -59,19 +75,10 @@
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  collection, 
-  addDoc 
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } 
+from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, collection, addDoc } 
+from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
@@ -86,104 +93,97 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const authStatus = document.getElementById("authStatus");
-const invoiceStatusMessage = document.getElementById("invoiceStatusMessage");
+let items = [];
 
-document.getElementById("registerBtn").addEventListener("click", async () => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      document.getElementById("email").value,
-      document.getElementById("password").value
-    );
+function renderItems() {
+  const tbody = document.querySelector("#itemsTable tbody");
+  tbody.innerHTML = "";
 
-    await setDoc(doc(db, "users", userCredential.user.uid), {
-      email: userCredential.user.email,
-      createdAt: new Date()
-    });
+  items.forEach((item, index) => {
+    const row = `
+      <tr>
+        <td>${item.name}</td>
+        <td>${item.quantity}</td>
+        <td>${item.price}</td>
+        <td>${item.total}</td>
+        <td><button onclick="removeItem(${index})">X</button></td>
+      </tr>
+    `;
+    tbody.innerHTML += row;
+  });
 
-    authStatus.textContent = "Регистрация успешна ✅";
-  } catch (error) {
-    authStatus.textContent = error.message;
-  }
-});
-
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  try {
-    await signInWithEmailAndPassword(
-      auth,
-      document.getElementById("email").value,
-      document.getElementById("password").value
-    );
-
-    authStatus.textContent = "Вход выполнен ✅";
-  } catch (error) {
-    authStatus.textContent = error.message;
-  }
-});
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("Пользователь вошёл:", user.uid);
-  }
-});
-
-// авторасчет
-function calculateTotal() {
-  const subtotal = Number(document.getElementById("subtotal").value) || 0;
-  const vat = Number(document.getElementById("vat").value) || 0;
-  document.getElementById("total").value = subtotal + vat;
+  calculateTotals();
 }
 
-document.getElementById("subtotal").addEventListener("input", calculateTotal);
-document.getElementById("vat").addEventListener("input", calculateTotal);
+window.removeItem = function(index) {
+  items.splice(index, 1);
+  renderItems();
+};
 
-// создание фактуры
+function calculateTotals() {
+  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+  const vatPercent = Number(document.getElementById("vatPercent").value) || 0;
+  const vatAmount = subtotal * vatPercent / 100;
+  const total = subtotal + vatAmount;
+
+  document.getElementById("subtotal").textContent = subtotal.toFixed(2);
+  document.getElementById("vatAmount").textContent = vatAmount.toFixed(2);
+  document.getElementById("totalAmount").textContent = total.toFixed(2);
+}
+
+document.getElementById("addItemBtn").addEventListener("click", () => {
+  const name = document.getElementById("serviceName").value;
+  const qty = Number(document.getElementById("serviceQty").value);
+  const price = Number(document.getElementById("servicePrice").value);
+
+  if (!name || !price) return;
+
+  const total = qty * price;
+
+  items.push({ name, quantity: qty, price, total });
+
+  renderItems();
+
+  document.getElementById("serviceName").value = "";
+  document.getElementById("serviceQty").value = 1;
+  document.getElementById("servicePrice").value = "";
+});
+
+document.getElementById("vatPercent").addEventListener("input", calculateTotals);
+
 document.getElementById("createInvoiceBtn").addEventListener("click", async () => {
 
   const user = auth.currentUser;
   if (!user) {
-    invoiceStatusMessage.textContent = "Сначала войдите ❗";
+    alert("Войдите в систему");
     return;
   }
 
-  try {
+  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+  const vatPercent = Number(document.getElementById("vatPercent").value) || 0;
+  const vatAmount = subtotal * vatPercent / 100;
+  const total = subtotal + vatAmount;
 
-    const clientData = {
+  const invoiceData = {
+    InvoiceNumber: document.getElementById("invoiceNumber").value,
+    IssueDate: document.getElementById("issueDate").value,
+    dueDate: document.getElementById("dueDate").value,
+    client: {
       firstName: document.getElementById("firstName").value,
       lastName: document.getElementById("lastName").value,
-      company: document.getElementById("company").value,
-      street: document.getElementById("street").value,
-      city: document.getElementById("city").value,
-      zip: document.getElementById("zip").value,
-      country: document.getElementById("country").value,
-      vatId: document.getElementById("vatId").value
-    };
+      street: document.getElementById("street").value
+    },
+    items,
+    subtotal,
+    vatPercent,
+    vatAmount,
+    total,
+    createdAt: new Date()
+  };
 
-    const invoiceData = {
-      InvoiceNumber: document.getElementById("invoiceNumber").value,
-      IssueDate: document.getElementById("issueDate").value,
-      dueDate: document.getElementById("dueDate").value,
-      client: clientData,
-      subtotal: Number(document.getElementById("subtotal").value),
-      vat: Number(document.getElementById("vat").value),
-      total: Number(document.getElementById("total").value),
-      status: document.getElementById("invoiceStatus").value,
-      items: [],
-      createdAt: new Date()
-    };
+  await addDoc(collection(db, "users", user.uid, "invoices"), invoiceData);
 
-    await addDoc(
-      collection(db, "users", user.uid, "invoices"),
-      invoiceData
-    );
-
-    invoiceStatusMessage.textContent = "Фактура создана ✅";
-
-  } catch (error) {
-    invoiceStatusMessage.textContent = error.message;
-  }
-
+  document.getElementById("invoiceStatusMessage").textContent = "Фактура создана ✅";
 });
 
 </script>
