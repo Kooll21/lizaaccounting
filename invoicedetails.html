@@ -280,7 +280,6 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     defaultStyle:{ font:'Roboto', fontSize:12, lineHeight:1.5 },
     pageMargins:[40,60,40,60]
   };
-
   pdfMake.createPdf(docDefinition).download(`Faktura_${invoiceNo}.pdf`);
 });
 </script>
