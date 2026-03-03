@@ -28,14 +28,22 @@
 <label>Срок оплаты:</label>
 <input type="date" id="dueDate"><br><br>
 
-<input type="text" id="client" placeholder="Клиент"><br><br>
+<h3>Данные клиента</h3>
 
-<input type="text" id="notes" placeholder="Примечание"><br><br>
+<input type="text" id="firstName" placeholder="Имя"><br><br>
+<input type="text" id="lastName" placeholder="Фамилия"><br><br>
+<input type="text" id="company" placeholder="Компания (если есть)"><br><br>
+
+<input type="text" id="street" placeholder="Улица и номер"><br><br>
+<input type="text" id="city" placeholder="Город"><br><br>
+<input type="text" id="zip" placeholder="Индекс"><br><br>
+<input type="text" id="country" placeholder="Страна"><br><br>
+<input type="text" id="vatId" placeholder="VAT / ICO"><br><br>
+
+<hr>
 
 <input type="number" id="subtotal" placeholder="Сумма без НДС"><br><br>
-
 <input type="number" id="vat" placeholder="НДС"><br><br>
-
 <input type="number" id="total" placeholder="Итого" readonly><br><br>
 
 <select id="invoiceStatus">
@@ -44,141 +52,139 @@
   <option value="paid">Оплачена</option>
 </select><br><br>
 
-<button id="createInvoiceBtn">Созить фактуру</button>
+<button id="createInvoiceBtn">Создать фактуру</button>
 
 <p id="invoiceStatusMessage"></p>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { 
-    getAuth, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    onAuthStateChanged 
-  } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-  import { 
-    getFirestore, 
-    doc, 
-    setDoc, 
-    collection, 
-    addDoc 
-  } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
-    authDomain: "lizaaccounting-d48b7.firebaseapp.com",
-    projectId: "lizaaccounting-d48b7",
-    storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
-    messagingSenderId: "407944794362",
-    appId: "1:407944794362:web:c646f7670a8717a3fab943"
-  };
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  collection, 
+  addDoc 
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+  projectId: "lizaaccounting-d48b7",
+  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+  messagingSenderId: "407944794362",
+  appId: "1:407944794362:web:c646f7670a8717a3fab943"
+};
 
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const authStatus = document.getElementById("authStatus");
-  const invoiceStatusMessage = document.getElementById("invoiceStatusMessage");
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  // 🔹 Регистрация
-  document.getElementById("registerBtn").addEventListener("click", async () => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        emailInput.value,
-        passwordInput.value
-      );
+const authStatus = document.getElementById("authStatus");
+const invoiceStatusMessage = document.getElementById("invoiceStatusMessage");
 
-      const user = userCredential.user;
+document.getElementById("registerBtn").addEventListener("click", async () => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      document.getElementById("email").value,
+      document.getElementById("password").value
+    );
 
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        createdAt: new Date()
-      });
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      email: userCredential.user.email,
+      createdAt: new Date()
+    });
 
-      authStatus.textContent = "Регистрация успешна ✅";
-    } catch (error) {
-      authStatus.textContent = error.message;
-    }
-  });
+    authStatus.textContent = "Регистрация успешна ✅";
+  } catch (error) {
+    authStatus.textContent = error.message;
+  }
+});
 
-  // 🔹 Логин
-  document.getElementById("loginBtn").addEventListener("click", async () => {
-    try {
-      await signInWithEmailAndPassword(
-        auth,
-        emailInput.value,
-        passwordInput.value
-      );
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      document.getElementById("email").value,
+      document.getElementById("password").value
+    );
 
-      authStatus.textContent = "Вход выполнен ✅";
-    } catch (error) {
-      authStatus.textContent = error.message;
-    }
-  });
+    authStatus.textContent = "Вход выполнен ✅";
+  } catch (error) {
+    authStatus.textContent = error.message;
+  }
+});
 
-  // 🔹 Проверка состояния авторизации
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log("Пользователь вошёл:", user.uid);
-    } else {
-      console.log("Пользователь вышел");
-    }
-  });
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log("Пользователь вошёл:", user.uid);
+  }
+});
 
-  // 🔹 Авторасчет total
-  const subtotalInput = document.getElementById("subtotal");
-  const vatInput = document.getElementById("vat");
-  const totalInput = document.getElementById("total");
+// авторасчет
+function calculateTotal() {
+  const subtotal = Number(document.getElementById("subtotal").value) || 0;
+  const vat = Number(document.getElementById("vat").value) || 0;
+  document.getElementById("total").value = subtotal + vat;
+}
 
-  function calculateTotal() {
-    const subtotal = Number(subtotalInput.value) || 0;
-    const vat = Number(vatInput.value) || 0;
-    totalInput.value = subtotal + vat;
+document.getElementById("subtotal").addEventListener("input", calculateTotal);
+document.getElementById("vat").addEventListener("input", calculateTotal);
+
+// создание фактуры
+document.getElementById("createInvoiceBtn").addEventListener("click", async () => {
+
+  const user = auth.currentUser;
+  if (!user) {
+    invoiceStatusMessage.textContent = "Сначала войдите ❗";
+    return;
   }
 
-  subtotalInput.addEventListener("input", calculateTotal);
-  vatInput.addEventListener("input", calculateTotal);
+  try {
 
-  // 🔹 Создание фактуры
-  document.getElementById("createInvoiceBtn").addEventListener("click", async () => {
+    const clientData = {
+      firstName: document.getElementById("firstName").value,
+      lastName: document.getElementById("lastName").value,
+      company: document.getElementById("company").value,
+      street: document.getElementById("street").value,
+      city: document.getElementById("city").value,
+      zip: document.getElementById("zip").value,
+      country: document.getElementById("country").value,
+      vatId: document.getElementById("vatId").value
+    };
 
-    const user = auth.currentUser;
+    const invoiceData = {
+      InvoiceNumber: document.getElementById("invoiceNumber").value,
+      IssueDate: document.getElementById("issueDate").value,
+      dueDate: document.getElementById("dueDate").value,
+      client: clientData,
+      subtotal: Number(document.getElementById("subtotal").value),
+      vat: Number(document.getElementById("vat").value),
+      total: Number(document.getElementById("total").value),
+      status: document.getElementById("invoiceStatus").value,
+      items: [],
+      createdAt: new Date()
+    };
 
-    if (!user) {
-      invoiceStatusMessage.textContent = "Сначала войдите в систему ❗";
-      return;
-    }
+    await addDoc(
+      collection(db, "users", user.uid, "invoices"),
+      invoiceData
+    );
 
-    try {
-      const invoiceData = {
-        InvoiceNumber: document.getElementById("invoiceNumber").value,
-        IssueDate: document.getElementById("issueDate").value,
-        dueDate: document.getElementById("dueDate").value,
-        client: document.getElementById("client").value,
-        Notes: document.getElementById("notes").value,
-        subtotal: Number(subtotalInput.value),
-        vat: Number(vatInput.value),
-        total: Number(totalInput.value),
-        status: document.getElementById("invoiceStatus").value,
-        items: [],
-        createdAt: new Date()
-      };
+    invoiceStatusMessage.textContent = "Фактура создана ✅";
 
-      await addDoc(
-        collection(db, "users", user.uid, "invoices"),
-        invoiceData
-      );
+  } catch (error) {
+    invoiceStatusMessage.textContent = error.message;
+  }
 
-      invoiceStatusMessage.textContent = "Фактура создана ✅";
-
-    } catch (error) {
-      invoiceStatusMessage.textContent = error.message;
-    }
-
-  });
+});
 
 </script>
 
