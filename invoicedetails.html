@@ -262,6 +262,8 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     content:[
       { text:'FAKTURA', style:'header' },
       { text:`Vystaveno dne ${today}`, alignment:'right', margin:[0,0,0,20] },
+      { text:'Vystavitel:', style:'subheader' },
+      { text:`Jelizaveta Lebeděva\nOcelářská 975/45\n19000, Praha`, margin:[0,0,0,20] },
       { text:'Fakturační údaje klienta:', style:'subheader' },
       { text:`${clientName}\n${clientCompany}\n${clientStreet}\n${clientZip}, ${clientCity}\n${clientCountry}\nDIČ/IČ: ${clientVAT}`, margin:[0,0,0,20] },
       { text:'Informace o faktuře:', style:'subheader' },
