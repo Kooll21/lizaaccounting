@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Seznam faktur</title>
+<style>
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #999;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #f2f2f2;
+  }
+  tr:hover {
+    background-color: #f9f9f9;
+  }
+</style>
+</head>
+<body>
+
+<h2>Seznam faktur</h2>
+<p id="authStatus"></p>
+<table>
+  <thead>
+    <tr>
+      <th>Klient</th>
+      <th>Datum vystavení</th>
+      <th>Datum splatnosti</th>
+      <th>Celkem (Kč)</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="invoiceTableBody">
+    <!-- faktury se načtou sem -->
+  </tbody>
+</table>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+  projectId: "lizaaccounting-d48b7",
+  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+  messagingSenderId: "407944794362",
+  appId: "1:407944794362:web:c646f7670a8717a3fab943"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const authStatus = document.getElementById("authStatus");
+const invoiceTableBody = document.getElementById("invoiceTableBody");
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    authStatus.textContent = "Přihlášen jako: " + user.email;
+    await loadInvoices(user.uid);
+  } else {
+    authStatus.textContent = "Nepřihlášen. Prosím přihlašte se.";
+    invoiceTableBody.innerHTML = "";
+    // Здесь можно добавить простой prompt для логина
+    const email = prompt("Zadejte email:");
+    const password = prompt("Zadejte heslo:");
+    if (email && password) {
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        alert("Chyba přihlášení: " + err.message);
+      }
+    }
+  }
+});
+
+async function loadInvoices(uid) {
+  const invoicesRef = collection(db, "users", uid, "invoices");
+  const snapshot = await getDocs(invoicesRef);
+
+  invoiceTableBody.innerHTML = ""; // очистка таблицы
+
+  snapshot.forEach(docSnap => {
+    const invoice = docSnap.data();
+    const clientName = invoice.client.firstName + " " + invoice.client.lastName;
+    const issueDate = invoice.issueDate || "";
+    const dueDate = invoice.dueDate || "";
+    const total = invoice.total ? invoice.total.toFixed(2) : "0.00";
+    const status = invoice.status || "unpaid";
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${clientName}</td>
+      <td>${issueDate}</td>
+      <td>${dueDate}</td>
+      <td>${total} Kč</td>
+      <td>${status}</td>
+    `;
+    invoiceTableBody.appendChild(row);
+  });
+}
+</script>
+
+</body>
+</html>
