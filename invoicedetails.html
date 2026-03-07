@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
@@ -74,16 +74,12 @@ button:hover { background:#1f6391; }
 </table>
 
 <h3>Přidat službu</h3>
-
 <label for="serviceName">Název služby:</label>
 <input type="text" id="serviceName" placeholder="Název služby"><br><br>
-
 <label for="serviceQty">Množství:</label>
 <input type="number" id="serviceQty" placeholder="Množství" value="1"><br><br>
-
 <label for="servicePrice">Cena:</label>
 <input type="number" id="servicePrice" placeholder="Cena"><br><br>
-
 <label for="serviceDiscount">Sleva %:</label>
 <input type="number" id="serviceDiscount" placeholder="Sleva %" value="0"><br><br>
 
@@ -126,23 +122,36 @@ const invoiceId = params.get("invoiceId");
 if (!invoiceId) alert("Nebyla vybrána faktura.");
 
 let currentUser = null;
+let supplierProfile = null;  // ? profil dodavatele
+
+// --- načtení profilu dodavatele ---
+async function loadSupplierProfile() {
+  const ref = doc(db, "users", currentUser.uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) { alert("Profil dodavatele nenalezen"); return; }
+  supplierProfile = snap.data();
+}
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     authStatus.textContent = "Přihlášen jako: " + user.email;
+
+    await loadSupplierProfile(); // ? načtení dodavatele
     await loadInvoice();
+
   } else {
     authStatus.textContent = "Nepřihlášen. Prosím přihlašte se.";
     const email = prompt("Zadejte email:");
     const password = prompt("Zadejte heslo:");
     if (email && password) {
-      try { await signInWithEmailAndPassword(auth, email, password); await loadInvoice(); } 
+      try { await signInWithEmailAndPassword(auth, email, password); await loadSupplierProfile(); await loadInvoice(); } 
       catch (err) { alert("Chyba přihlášení: " + err.message); }
     }
   }
 });
 
+// --- načtení faktury ---
 async function loadInvoice() {
   const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
   const docSnap = await getDoc(docRef);
@@ -177,7 +186,7 @@ async function loadInvoice() {
   });
 
   const vatPercent = invoice.vatPercent ?? 21;
-document.getElementById("vatPercent").value = vatPercent;
+  document.getElementById("vatPercent").value = vatPercent;
   const vatAmount = subtotal * vatPercent / 100;
   document.getElementById("vatPercent").addEventListener("input", recalcTotals);
   document.getElementById("subtotal").textContent = subtotal.toFixed(2);
@@ -185,9 +194,9 @@ document.getElementById("vatPercent").value = vatPercent;
   document.getElementById("totalAmount").textContent = (subtotal + vatAmount).toFixed(2);
 }
 
+// --- uložení faktury ---
 document.getElementById("saveInvoiceBtn").addEventListener("click", async () => {
   const docRef = doc(db, "users", currentUser.uid, "invoices", invoiceId);
-
   const clientData = {};
   ["firstName","lastName","company","street","city","zip","country","vatId"].forEach(k => {
     clientData[k] = document.getElementById(k).value;
@@ -223,25 +232,16 @@ document.getElementById("saveInvoiceBtn").addEventListener("click", async () => 
   };
 
   await updateDoc(docRef, updatedData);
-  statusMessage.textContent = "Faktura byla úspěšně aktualizována ✅";
+  statusMessage.textContent = "Faktura byla úspěšně aktualizována ?";
   await loadInvoice();
 });
 
-// --- PDF с pdfMake ---
+// --- PDF generace ---
 document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   const invoiceNo = document.getElementById("invoiceNumber").value || "neuvedeno";
   const issueDate = document.getElementById("issueDate").value || "";
   const dueDate = document.getElementById("dueDate").value || "";
   const paymentMethod = document.getElementById("paymentMethod").value || "";
-let paymentInfo = "";
-
-if (paymentMethod === "Převodem na účet") {
-  paymentInfo =
-    `Bankovní účet: 256017834/0300\n` +
-    `Variabilní symbol: ${invoiceNo}`;
-}
-  const status = document.getElementById("status").value || "";
-
   const clientName = document.getElementById("firstName").value + " " + document.getElementById("lastName").value;
   const clientCompany = document.getElementById("company").value;
   const clientStreet = document.getElementById("street").value;
@@ -249,25 +249,26 @@ if (paymentMethod === "Převodem na účet") {
   const clientZip = document.getElementById("zip").value;
   const clientCountry = document.getElementById("country").value;
   const clientVAT = document.getElementById("vatId").value;
-
   const vatPercent = document.getElementById("vatPercent").value || 21;
   const subtotal = parseFloat(document.getElementById("subtotal").textContent) || 0;
   const vatAmount = parseFloat(document.getElementById("vatAmount").textContent) || 0;
   const totalAmount = parseFloat(document.getElementById("totalAmount").textContent) || 0;
 
-let qrPayment = null;
+  // --- QR platba podle údajů z profilu dodavatele ---
+  let qrPayment = null;
+  if (paymentMethod === "Převodem na účet") {
+    const amount = totalAmount.toFixed(2);
 
-if (paymentMethod === "Převodem na účet") {
+    // číslo účtu a kód banky z databáze
+    const account = supplierProfile?.accountnumber || "0000000000";
+    const bank = supplierProfile?.bankcode || "0000";
 
-  const amount = totalAmount.toFixed(2);
+    // jednoduché složení IBAN pro QR platbu (pokud nemáš uložený IBAN)
+    // Pokud máš uložený IBAN přímo v profilu, můžeš použít: supplierProfile.IBAN
+    const IBAN = supplierProfile?.IBAN || `CZ00${bank}${account.padStart(16,'0')}`;
 
-qrPayment =
-  `SPD*1.0*ACC:CZ6503000000000256017834` +
-  `*AM:${amount}` +
-  `*CC:CZK` +
-  `*X-VS:${invoiceNo}`;
-
-}
+    qrPayment = `SPD*1.0*ACC:${IBAN}*AM:${amount}*CC:CZK*X-VS:${invoiceNo}`;
+  }
 
   const tableBody = [
     [
@@ -295,175 +296,131 @@ qrPayment =
     ]);
   });
 
-  const today = new Date().toLocaleDateString('cs-CZ',{ day:'numeric', month:'long', year:'numeric' });
-
-const docDefinition = {
-  content:[
-
-    // Шапка фактуры
-    {
-      columns:[
-        [
-          { text:`FAKTURA`, style:'header' },
-          { text:`Číslo: ${invoiceNo}`, margin:[0,5,0,20] }
-        ],
-        [
-          { text:`Datum vystavení: ${issueDate}`, alignment:'right' },
-          { text:`Datum splatnosti: ${dueDate}`, alignment:'right' },
-          { text:`Způsob platby: ${paymentMethod}`, alignment:'right' }
+  const docDefinition = {
+    content:[
+      {
+        columns:[
+          [
+            { text:`FAKTURA`, style:'header' },
+            { text:`Číslo: ${invoiceNo}`, margin:[0,5,0,20] }
+          ],
+          [
+            { text:`Datum vystavení: ${issueDate}`, alignment:'right' },
+            { text:`Datum splatnosti: ${dueDate}`, alignment:'right' },
+            { text:`Způsob platby: ${paymentMethod}`, alignment:'right' }
+          ]
         ]
-      ]
-    },
-
-    // Данные поставщика и клиента
-    {
-      columns:[
-        [
-          { text:'Dodavatel', style:'subheader' },
-          { text:
-`Jelizaveta Lebeděva
-Ocelářská 975/45
-19000 Praha
-IČO: 19864426
-Neplátce DPH`
-          }
-        ],
-        [
-          { text:'Odběratel', style:'subheader' },
-          { text:
+      },
+      {
+        columns:[
+          [
+            { text:'Dodavatel', style:'subheader' },
+            { text:
+`${supplierProfile?.name || ""} ${supplierProfile?.surname || ""}
+${supplierProfile?.ulice || ""} ${supplierProfile?.cislopopisne || ""}/${supplierProfile?.cisloorientacni || ""}
+${supplierProfile?.PSC || ""} ${supplierProfile?.mesto || ""}
+IČO: ${supplierProfile?.DICIC || ""}
+${supplierProfile?.DPHstatus || ""}`
+            }
+          ],
+          [
+            { text:'Odběratel', style:'subheader' },
+            { text:
 `${clientName}
 ${clientCompany}
 ${clientStreet}
 ${clientZip} ${clientCity}
 ${clientCountry}
 IČ/DIČ: ${clientVAT}`
-          }
-        ]
-      ],
-      margin:[0,0,0,20]
-    },
-
-    // Таблица с товарами / услугами
-    {
-      table:{
-        headerRows:1,
-        widths:['*','auto','auto','auto','auto'],
-        body: tableBody
+            }
+          ]
+        ],
+        margin:[0,0,0,20]
       },
-      layout:'lightHorizontalLines',
-      margin:[0,10,0,20]
-    },
-
-    // Нижний блок: банковские реквизиты слева и суммы справа
-    {
-      columns:[
-
-        // Левая колонка — банк
-        {
-          stack:[
-            paymentMethod === "Převodem na účet"
-              ? { text:
-`Bankovní účet: 256017834/0300
-Variabilní symbol: ${invoiceNo}`,
-                margin:[0,10,0,0] }
-              : { text:'' } // если не банковский перевод
-          ],
-          width: 'auto',
-          alignment: 'left'
-        },
-{ text:'', width:'*' },
-        // Правая колонка — суммы
-        {
-          table:{
-            body:[
-              ['Mezisoučet', `${subtotal.toFixed(2)} Kč`],
-              [`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`],
-              [{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
-            ]
-          },
-          layout:'noBorders',
-          width: 'auto',
-          alignment:'right'
-        }
-
-      ],
-      columnGap: 10,
-      margin:[0,10,0,0]
-    },
-
-    // QR-код (если есть)
-    ...(qrPayment ? [
+      {
+        table:{ headerRows:1, widths:['*','auto','auto','auto','auto'], body: tableBody },
+        layout:'lightHorizontalLines',
+        margin:[0,10,0,20]
+      },
       {
         columns:[
-          // QR-код слева
           {
             stack:[
-              { text:"QR Platba", style:"subheader", alignment:'center' },
-              { qr: qrPayment, fit:120, alignment:'center' }
+              paymentMethod === "Převodem na účet"
+                ? { text:
+`Bankovní účet: ${supplierProfile?.accountnumber || "neuvedeno"}/${supplierProfile?.bankcode || "neuvedeno"}
+Variabilní symbol: ${invoiceNo}`, margin:[0,10,0,0] }
+                : { text:'' }
             ],
-            width:150
+            width: 'auto',
+            alignment: 'left'
           },
-          // Пустой блок справа
-          { text:'' }
+          { text:'', width:'*' },
+          {
+            table:{
+              body:[
+                ['Mezisoučet', `${subtotal.toFixed(2)} Kč`],
+                [`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`],
+                [{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
+              ]
+            },
+            layout:'noBorders',
+            width: 'auto',
+            alignment:'right'
+          }
         ],
-        margin:[0,20,0,0]
-      }
-    ] : [])
+        columnGap: 10,
+        margin:[0,10,0,0]
+      },
+      ...(qrPayment ? [
+        {
+          columns:[
+            {
+              stack:[
+                { text:"QR Platba", style:"subheader", alignment:'center' },
+                { qr: qrPayment, fit:120, alignment:'center' }
+              ],
+              width:150
+            },
+            { text:'' }
+          ],
+          margin:[0,20,0,0]
+        }
+      ] : [])
+    ],
+    styles:{
+      header:{ fontSize:20, bold:true },
+      subheader:{ fontSize:13, bold:true, margin:[0,0,0,5] }
+    },
+    defaultStyle:{ font:'Roboto', fontSize:11 },
+    pageMargins:[40,50,40,50]
+  };
 
-  ],
-
-  styles:{
-    header:{ fontSize:20, bold:true },
-    subheader:{ fontSize:13, bold:true, margin:[0,0,0,5] }
-  },
-
-  defaultStyle:{
-    font:'Roboto',
-    fontSize:11
-  },
-
-  pageMargins:[40,50,40,50]
-};
-
-pdfMake.createPdf(docDefinition).download(`Faktura_${invoiceNo}.pdf`);
-
+  pdfMake.createPdf(docDefinition).download(`Faktura_${invoiceNo}.pdf`);
 });
 
-
+// --- recalc totals ---
 function recalcTotals() {
-
   let subtotal = 0;
-
   itemsTableBody.querySelectorAll("tr").forEach(row => {
-
     const inputs = row.querySelectorAll("input");
-
     const qty = Number(inputs[1].value);
     const price = Number(inputs[2].value);
     const discount = Number(inputs[3].value);
-
     const total = qty * price * (1 - discount / 100);
-
     row.querySelector(".rowTotal").textContent = total.toFixed(2);
-
     subtotal += total;
-
   });
-
   const vatPercent = Number(document.getElementById("vatPercent").value);
   const vatAmount = subtotal * vatPercent / 100;
-
   document.getElementById("subtotal").textContent = subtotal.toFixed(2);
   document.getElementById("vatAmount").textContent = vatAmount.toFixed(2);
   document.getElementById("totalAmount").textContent = (subtotal + vatAmount).toFixed(2);
 }
 
 function addItemRow(name, quantity, price, discount) {
-
   const total = quantity * price * (1 - discount / 100);
-
   const row = document.createElement("tr");
-
   row.innerHTML = `
     <td><input value="${name}"></td>
     <td><input type="number" value="${quantity}"></td>
@@ -471,29 +428,22 @@ function addItemRow(name, quantity, price, discount) {
     <td><input type="number" value="${discount}"></td>
     <td class="rowTotal">${total.toFixed(2)}</td>
   `;
-
   itemsTableBody.appendChild(row);
-
   recalcTotals();
 }
 
 document.getElementById("addItemBtn").addEventListener("click", () => {
-
   const name = document.getElementById("serviceName").value;
   const qty = Number(document.getElementById("serviceQty").value);
   const price = Number(document.getElementById("servicePrice").value);
   const discount = Number(document.getElementById("serviceDiscount").value) || 0;
-
   if (!name || !price) return;
-
   addItemRow(name, qty, price, discount);
-
   document.getElementById("serviceName").value = "";
   document.getElementById("serviceQty").value = 1;
   document.getElementById("servicePrice").value = "";
   document.getElementById("serviceDiscount").value = 0;
 });
-
 </script>
 </body>
 </html>
