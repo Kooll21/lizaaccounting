@@ -10,15 +10,130 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.min.js"></script>
 
 <style>
-body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin:auto; background:#f9f9f9; }
-nav { background:#333; padding:10px; }
-nav a { color:white; margin-right:15px; text-decoration:none; }
-input, select, button { margin:5px 0; padding:5px; width:100%; max-width:400px; }
-table { border-collapse: collapse; width:100%; margin-top:10px; background:white; }
-th, td { border:1px solid #999; padding:8px; text-align:left; }
-th { background-color:#f2f2f2; }
-button { background:#2980b9; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; }
-button:hover { background:#1f6391; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
+  max-width: 1000px;
+  margin: auto;
+  background: #f4f6f8;
+  color: #333;
+}
+
+nav {
+  background: #2c3e50;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+h2, h3 {
+  color: #2c3e50;
+}
+
+.section-card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+label {
+  font-weight: 500;
+  display: block;
+  margin-top: 10px;
+}
+
+input, select {
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  transition: border 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #2980b9;
+}
+
+button {
+  background: #2980b9;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #1f6391;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+}
+
+th {
+  background-color: #ecf0f1;
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background-color: #eaf2f8;
+}
+
+.summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.summary p {
+  background: #fff;
+  padding: 12px 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  font-weight: 500;
+}
+
+#statusMessage {
+  margin-top: 15px;
+  font-weight: 500;
+  color: green;
+}
 </style>
 </head>
 <body>
@@ -26,12 +141,13 @@ button:hover { background:#1f6391; }
 <nav>
   <a href="index.html">Nová faktura</a>
   <a href="invoicelist.html">Seznam faktur</a>
-  <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Admin</a>
+  <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Můj profil</a>
 </nav>
 
 <h2>Detail faktury</h2>
 <p id="authStatus"></p>
 
+<div class="section-card">
 <h3>Informace o faktuře</h3>
 <label>Číslo faktury:</label><input type="text" id="invoiceNumber">
 <label>Datum vystavení:</label><input type="date" id="issueDate">
@@ -48,7 +164,9 @@ button:hover { background:#1f6391; }
   <option value="paid">Paid</option>
   <option value="overdue">Overdue</option>
 </select>
+</div>
 
+<div class="section-card">
 <h3>Klient</h3>
 <input type="text" id="firstName" placeholder="Jméno">
 <input type="text" id="lastName" placeholder="Příjmení">
@@ -58,7 +176,9 @@ button:hover { background:#1f6391; }
 <input type="text" id="zip" placeholder="PSČ">
 <input type="text" id="country" placeholder="Země">
 <input type="text" id="vatId" placeholder="DIČ / IČ">
+</div>
 
+<div class="section-card">
 <h3>Položky faktury</h3>
 <table>
 <thead>
@@ -72,7 +192,9 @@ button:hover { background:#1f6391; }
 </thead>
 <tbody id="itemsTableBody"></tbody>
 </table>
+</div>
 
+<div class="section-card">
 <h3>Přidat službu</h3>
 <label for="serviceName">Název služby:</label>
 <input type="text" id="serviceName" placeholder="Název služby"><br><br>
@@ -85,6 +207,8 @@ button:hover { background:#1f6391; }
 
 <button id="addItemBtn">Přidat</button>
 <br><br>
+</div>
+<div class="section-card">
 <label>DPH %:</label><input type="number" id="vatPercent">
 <p>Mezisoučet: <span id="subtotal">0</span> Kč</p>
 <p>DPH: <span id="vatAmount">0</span> Kč</p>
@@ -93,6 +217,7 @@ button:hover { background:#1f6391; }
 <button id="saveInvoiceBtn">Uložit změny</button>
 <button id="downloadPdfBtn">Stáhnout PDF</button>
 <p id="statusMessage"></p>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
