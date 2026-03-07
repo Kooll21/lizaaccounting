@@ -107,12 +107,28 @@ button:hover{
 
 <button onclick="saveProfile()">Uložit změny</button>
 
+<h3>Moje služby</h3>
+
+<div id="servicesList">
+    <!-- Zde se budou dynamicky vypisovat služby -->
 </div>
+
+<h4>Přidat / upravit službu</h4>
+
+<label>Název služby</label>
+<input id="serviceName">
+
+<label>Cena</label>
+<input id="servicePrice" type="number" step="0.01">
+
+<button onclick="addOrUpdateService()">Přidat / Uložit službu</button>
+</div>
+
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, collection, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
@@ -152,7 +168,6 @@ onAuthStateChanged(auth, async (user) => {
     // Načtení jména a příjmení
     document.getElementById("name").value = data.name || "";
     document.getElementById("surname").value = data.surname || "";
-
     document.getElementById("email").value = data.email || "";
     document.getElementById("dicic").value = data.DICIC || "";
     document.getElementById("psc").value = data.PSC || "";
@@ -163,8 +178,7 @@ onAuthStateChanged(auth, async (user) => {
 
     // Naplnění DPH select
     const dphSelect = document.getElementById("dphstatus");
-    dphSelect.innerHTML = ""; // vyčistit možnosti
-
+    dphSelect.innerHTML = "";
     if(!data.DPHstatus){ 
         const options = ["Plátce DPH", "Neplátce DPH"];
         options.forEach(opt => {
@@ -192,6 +206,8 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("bankcode").value = data.bankcode || "";
     document.getElementById("iban").value = data.IBAN || "";
 
+    // Po načtení profilu načteme služby
+    await loadServices();
 });
 
 // Funkce pro generování českého IBAN
@@ -223,8 +239,8 @@ function updateIBAN(){
     document.getElementById("iban").value = generateIBAN(acc, code);
 }
 
+// Uložení profilu
 window.saveProfile = async function(){
-
     const ref = doc(db,"users",currentUID);
 
     await updateDoc(ref, {
@@ -243,6 +259,84 @@ window.saveProfile = async function(){
     });
 
     alert("Profil uložen");
+}
+
+// --------------------- NOVÉ FUNKCE PRO SLUŽBY ---------------------
+
+let servicesData = {}; // cache služeb
+
+async function loadServices() {
+    const servicesContainer = document.getElementById("servicesList");
+    if (!servicesContainer) return;
+    servicesContainer.innerHTML = "";
+
+    const servicesCol = collection(db, "users", currentUID, "services");
+    const snapshot = await getDocs(servicesCol);
+
+    servicesData = {};
+    snapshot.forEach(doc => {
+        servicesData[doc.id] = doc.data();
+        const div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "10px";
+        div.style.marginTop = "5px";
+        div.innerHTML = `
+            <strong>${doc.data().servicename}</strong> - ${doc.data().price} Kč
+            <button onclick="editService('${doc.id}')">Upravit</button>
+            <button onclick="deleteService('${doc.id}')">Smazat</button>
+        `;
+        servicesContainer.appendChild(div);
+    });
+}
+
+window.addOrUpdateService = async function() {
+    const nameInput = document.getElementById("serviceName");
+    const priceInput = document.getElementById("servicePrice");
+
+    const name = nameInput.value.trim();
+    const price = parseFloat(priceInput.value);
+
+    if (!name || isNaN(price)) {
+        alert("Vyplňte prosím název a cenu služby");
+        return;
+    }
+
+    let serviceId = nameInput.dataset.id;
+    if (!serviceId) {
+        // generování ID pro novou službu
+        serviceId = Math.random().toString(36).substring(2, 15);
+    }
+
+    // Správné volání doc()
+    const serviceRef = doc(db, "users", currentUID, "services", serviceId);
+    await setDoc(serviceRef, { servicename: name, price: price });
+
+    // vyčištění formuláře
+    nameInput.value = "";
+    priceInput.value = "";
+    delete nameInput.dataset.id;
+
+    await loadServices();
+}
+
+window.editService = function(id) {
+    const service = servicesData[id];
+    const nameInput = document.getElementById("serviceName");
+    const priceInput = document.getElementById("servicePrice");
+
+    nameInput.value = service.servicename;
+    priceInput.value = service.price;
+    nameInput.dataset.id = id;
+}
+
+window.deleteService = async function(id) {
+    if (!confirm("Opravdu chcete službu smazat?")) return;
+
+    // Správné volání doc()
+    const serviceRef = doc(db, "users", currentUID, "services", id);
+
+    await deleteDoc(serviceRef);
+    await loadServices();
 }
 
 </script>

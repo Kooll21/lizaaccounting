@@ -1,90 +1,78 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="cs">
 <head>
-  <nav style="background:#333;padding:10px;">
-  <a href="index.html" class="nav-link" style="color:white;margin-right:15px;text-decoration:none;">Nová faktura</a>
-  <a href="invoicelist.html" class="nav-link" style="color:white;text-decoration:none;">Seznam faktur</a>
-    <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Admin</a>
-</nav>
-<hr>
-
-<script>
-// Подсветка активной ссылки
-const links = document.querySelectorAll(".nav-link");
-links.forEach(link => {
-  if (link.href === window.location.href) {
-    link.style.fontWeight = "bold";
-    link.style.textDecoration = "underline";
-  }
-});
-</script>
 <meta charset="UTF-8">
-<title>Liza Accounting</title>
+<title>Nová faktura - Liza Accounting</title>
+<style>
+body { font-family: Arial; margin: 0; padding: 20px; background: #f4f4f4; }
+nav { background:#333; padding:10px; }
+nav a { color:white; margin-right:15px; text-decoration:none; }
+h2,h3,h4 { margin-top: 20px; }
+input, select, button { display:block; width:100%; padding:8px; margin-top:5px; box-sizing:border-box; }
+button { background:#2c7be5; border:none; color:white; cursor:pointer; margin-top:10px; }
+button:hover { background:#1a5ec8; }
+table { width:100%; border-collapse: collapse; margin-top: 10px; }
+table th, table td { border: 1px solid #ccc; padding:5px; text-align:center; }
+</style>
 </head>
 <body>
 
-<h2>Registrace</h2>
-<input type="email" id="email" placeholder="Email">
-<input type="password" id="password" placeholder="Heslo">
-<button id="registerBtn">Registrovat</button>
-
-<h2>Přihlášení</h2>
-<button id="loginBtn">Přihlásit se</button>
-
-<p id="authStatus"></p>
-
-<hr>
+<nav>
+<a href="index.html">Nová faktura</a>
+<a href="invoicelist.html">Seznam faktur</a>
+<a href="admin.html">Admin</a>
+</nav>
 
 <h2>Nová faktura</h2>
+<p id="authStatus"></p>
 
-<input type="text" id="invoiceNumber" placeholder="Číslo faktury"><br><br>
-
+<input type="text" id="invoiceNumber" placeholder="Číslo faktury">
 <label>Datum vystavení:</label>
-<input type="date" id="issueDate"><br><br>
-
+<input type="date" id="issueDate">
 <label>Datum splatnosti:</label>
-<input type="date" id="dueDate"><br><br>
-
+<input type="date" id="dueDate">
 <label>Způsob platby:</label>
 <select id="paymentMethod">
   <option value="Hotovost">Hotovost</option>
   <option value="Kartou">Kartou</option>
   <option value="Převodem na účet" selected>Převodem na účet</option>
 </select>
-<br><br>
 
 <h3>Klient</h3>
-<input type="text" id="firstName" placeholder="Jméno"><br>
-<input type="text" id="lastName" placeholder="Příjmení"><br>
-<input type="text" id="company" placeholder="Firma (pokud je)"><br><br>
-
-<input type="text" id="street" placeholder="Ulice a číslo"><br><br>
-<input type="text" id="city" placeholder="Město"><br><br>
-<input type="text" id="zip" placeholder="PSČ"><br><br>
-<input type="text" id="country" placeholder="Země"><br><br>
-<input type="text" id="vatId" placeholder="DIČ / IČ"><br><br>
+<input type="text" id="firstName" placeholder="Jméno">
+<input type="text" id="lastName" placeholder="Příjmení">
+<input type="text" id="company" placeholder="Firma (pokud je)">
+<input type="text" id="street" placeholder="Ulice a číslo">
+<input type="text" id="city" placeholder="Město">
+<input type="text" id="zip" placeholder="PSČ">
+<input type="text" id="country" placeholder="Země">
+<input type="text" id="vatId" placeholder="DIČ / IČ">
 
 <hr>
 
 <h3>Přidat službu</h3>
+<label for="serviceTemplate">Vyber službu ze šablon:</label>
+<select id="serviceTemplate">
+  <option value="">-- vyber službu --</option>
+</select>
+<button id="loadServiceBtn">Načíst do formuláře</button>
 
 <label for="serviceName">Název služby:</label>
-<input type="text" id="serviceName" placeholder="Název služby"><br><br>
+<input type="text" id="serviceName" placeholder="Název služby">
 
 <label for="serviceQty">Množství:</label>
-<input type="number" id="serviceQty" placeholder="Množství" value="1"><br><br>
+<input type="number" id="serviceQty" value="1">
 
 <label for="servicePrice">Cena:</label>
-<input type="number" id="servicePrice" placeholder="Cena"><br><br>
+<input type="number" id="servicePrice">
 
 <label for="serviceDiscount">Sleva %:</label>
-<input type="number" id="serviceDiscount" placeholder="Sleva %" value="0"><br><br>
+<input type="number" id="serviceDiscount" value="0">
 
-<button id="addItemBtn">Přidat</button>
+<button id="addItemBtn">Přidat do faktury</button>
+<button id="saveServiceTemplateBtn">Uložit tuto službu do šablon</button>
 
-<br><br>
-
-<table border="1" id="itemsTable">
+<table id="itemsTable">
   <thead>
     <tr>
       <th>Služba</th>
@@ -98,35 +86,20 @@ links.forEach(link => {
   <tbody></tbody>
 </table>
 
-<br>
-
 <label>DPH %:</label>
-<input type="number" id="vatPercent" value="21"><br><br>
+<input type="number" id="vatPercent" value="21">
 
 <p>Mezisoučet: <span id="subtotal">0</span></p>
 <p>DPH: <span id="vatAmount">0</span></p>
 <p>Celkem: <span id="totalAmount">0</span></p>
 
-<br>
-
 <button id="createInvoiceBtn">Vytvořit fakturu</button>
-
 <p id="invoiceStatusMessage"></p>
 
 <script type="module">
-// --- tady zůstává tvůj původní JS kód s Firebase, auth, fakturou a položkami ---
-// jen textové hlášky (např. status) překládáme níže
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, addDoc } 
-from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
@@ -142,92 +115,45 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let items = [];
+let serviceTemplates = {};
 
-// --- AUTH SECTION ---
-onAuthStateChanged(auth, (user) => {
-  const status = document.getElementById("authStatus");
-
-  if (user) {
-    status.textContent = "Přihlášen jako: " + user.email;
-  } else {
-    status.textContent = "Nepřihlášen";
-  }
-});
-
-document.getElementById("registerBtn").addEventListener("click", async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    document.getElementById("authStatus").textContent = error.message;
-  }
-});
-
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    document.getElementById("authStatus").textContent = error.message;
-  }
-});
-
-// --- INVOICE LOGIC ---
 function renderItems() {
   const tbody = document.querySelector("#itemsTable tbody");
   tbody.innerHTML = "";
-
   items.forEach((item, index) => {
-    const row = `
-      <tr>
-        <td>${item.name}</td>
-        <td>${item.quantity}</td>
-        <td>${item.price.toFixed(2)} Kč</td>
-        <td>${item.discount}%</td>
-        <td>${item.total.toFixed(2)} Kč</td>
-        <td><button onclick="removeItem(${index})">X</button></td>
-      </tr>
-    `;
-    tbody.innerHTML += row;
+    tbody.innerHTML += `<tr>
+      <td>${item.name}</td>
+      <td>${item.quantity}</td>
+      <td>${item.price.toFixed(2)} Kč</td>
+      <td>${item.discount}%</td>
+      <td>${item.total.toFixed(2)} Kč</td>
+      <td><button onclick="removeItem(${index})">X</button></td>
+    </tr>`;
   });
-
   calculateTotals();
 }
-
-window.removeItem = function(index) {
-  items.splice(index, 1);
-  renderItems();
-};
 
 function calculateTotals() {
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const vatPercent = Number(document.getElementById("vatPercent").value) || 0;
   const vatAmount = subtotal * vatPercent / 100;
   const total = subtotal + vatAmount;
-
   document.getElementById("subtotal").textContent = subtotal.toFixed(2) + " Kč";
   document.getElementById("vatAmount").textContent = vatAmount.toFixed(2) + " Kč";
   document.getElementById("totalAmount").textContent = total.toFixed(2) + " Kč";
 }
 
+window.removeItem = function(index) { items.splice(index,1); renderItems(); }
+
 document.getElementById("addItemBtn").addEventListener("click", () => {
-  const name = document.getElementById("serviceName").value;
+  const name = document.getElementById("serviceName").value.trim();
   const qty = Number(document.getElementById("serviceQty").value);
   const price = Number(document.getElementById("servicePrice").value);
   const discount = Number(document.getElementById("serviceDiscount").value) || 0;
-
   if (!name || !price) return;
-
   const total = qty * price * (1 - discount / 100);
-
   items.push({ name, quantity: qty, price, discount, total });
-
   renderItems();
-
   document.getElementById("serviceName").value = "";
   document.getElementById("serviceQty").value = 1;
   document.getElementById("servicePrice").value = "";
@@ -236,18 +162,69 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 
 document.getElementById("vatPercent").addEventListener("input", calculateTotals);
 
+onAuthStateChanged(auth, async (user) => {
+  const status = document.getElementById("authStatus");
+  if (!user) { status.textContent = "Nepřihlášen"; return; }
+  status.textContent = "Přihlášen jako: " + user.email;
+
+  // načtení šablon služeb
+  const servicesCol = collection(db, "users", user.uid, "services");
+  const snapshot = await getDocs(servicesCol);
+  serviceTemplates = {};
+  const select = document.getElementById("serviceTemplate");
+  select.innerHTML = `<option value="">-- vyber službu --</option>`;
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    serviceTemplates[doc.id] = data;
+    const opt = document.createElement("option");
+    opt.value = doc.id;
+    opt.textContent = `${data.servicename} (${data.price} Kč)`;
+    select.appendChild(opt);
+  });
+});
+
+document.getElementById("loadServiceBtn").addEventListener("click", () => {
+  const serviceId = document.getElementById("serviceTemplate").value;
+  if (!serviceId) return;
+  const service = serviceTemplates[serviceId];
+  document.getElementById("serviceName").value = service.servicename;
+  document.getElementById("servicePrice").value = service.price;
+  document.getElementById("serviceQty").value = 1;
+  document.getElementById("serviceDiscount").value = 0;
+});
+
+document.getElementById("saveServiceTemplateBtn").addEventListener("click", async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+  const name = document.getElementById("serviceName").value.trim();
+  const price = Number(document.getElementById("servicePrice").value);
+  if (!name || isNaN(price)) { alert("Vyplňte název a cenu služby"); return; }
+  const serviceId = crypto.randomUUID();
+  await setDoc(doc(db, "users", user.uid, "services", serviceId), { servicename:name, price:price });
+  alert("Služba byla uložena do šablon");
+  // obnovit dropdown
+  const servicesCol = collection(db, "users", user.uid, "services");
+  const snapshot = await getDocs(servicesCol);
+  serviceTemplates = {};
+  const select = document.getElementById("serviceTemplate");
+  select.innerHTML = `<option value="">-- vyber službu --</option>`;
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    serviceTemplates[doc.id] = data;
+    const opt = document.createElement("option");
+    opt.value = doc.id;
+    opt.textContent = `${data.servicename} (${data.price} Kč)`;
+    select.appendChild(opt);
+  });
+});
+
 document.getElementById("createInvoiceBtn").addEventListener("click", async () => {
   const user = auth.currentUser;
-  if (!user) {
-    alert("Přihlaste se prosím");
-    return;
-  }
-
-  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const vatPercent = Number(document.getElementById("vatPercent").value) || 0;
-  const vatAmount = subtotal * vatPercent / 100;
-  const total = subtotal + vatAmount;
-
+  if (!user) { alert("Přihlaste se prosím"); return; }
+  const subtotal = items.reduce((sum,item)=>sum+item.total,0);
+  const vatPercent = Number(document.getElementById("vatPercent").value)||0;
+  const vatAmount = subtotal*vatPercent/100;
+  const total = subtotal+vatAmount;
   const clientData = {
     firstName: document.getElementById("firstName").value,
     lastName: document.getElementById("lastName").value,
@@ -258,28 +235,23 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
     country: document.getElementById("country").value,
     vatId: document.getElementById("vatId").value
   };
-
   const invoiceData = {
     invoiceNumber: document.getElementById("invoiceNumber").value,
     issueDate: document.getElementById("issueDate").value,
     dueDate: document.getElementById("dueDate").value,
     client: clientData,
     items,
-    subtotal,
-    vatPercent,
-    vatAmount,
-    total,
-    currency: "CZK",
+    subtotal, vatPercent, vatAmount, total,
+    currency:"CZK",
     paymentMethod: document.getElementById("paymentMethod").value,
-    status: "unpaid", 
+    status:"unpaid",
     createdAt: new Date()
   };
-
-  await addDoc(collection(db, "users", user.uid, "invoices"), invoiceData);
-
-  document.getElementById("invoiceStatusMessage").textContent = "Faktura byla vytvořena ✅";
+  await addDoc(collection(db,"users",user.uid,"invoices"),invoiceData);
+  document.getElementById("invoiceStatusMessage").textContent = "Faktura byla vytvořena ?";
+  items = [];
+  renderItems();
 });
-
 </script>
 
 </body>
