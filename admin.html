@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Admin - Uživatelé</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+background:#f4f4f4;
+}
+
+.container{
+padding:20px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+}
+
+th,td{
+padding:10px;
+border:1px solid #ddd;
+}
+
+th{
+background:#444;
+color:white;
+}
+
+input{
+width:100%;
+padding:6px;
+box-sizing:border-box;
+}
+
+button{
+padding:6px 12px;
+background:#2c7be5;
+border:none;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#1a5ec8;
+}
+
+</style>
+</head>
+
+<body>
+
+<nav style="background:#333;padding:10px;">
+<a href="index.html" class="nav-link" style="color:white;margin-right:15px;text-decoration:none;">Nová faktura</a>
+<a href="invoicelist.html" class="nav-link" style="color:white;margin-right:15px;text-decoration:none;">Seznam faktur</a>
+<a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Admin</a>
+</nav>
+
+<div class="container">
+
+<h2>Správa uživatelů</h2>
+
+<table id="usersTable">
+
+<thead>
+<tr>
+<th>Email</th>
+<th>DICIC</th>
+<th>DPHstatus</th>
+<th>Adresa</th>
+<th>Created</th>
+<th>Akce</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+getDocs,
+doc,
+updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const firebaseConfig = {
+apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+projectId: "lizaaccounting-d48b7",
+storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+messagingSenderId: "407944794362",
+appId: "1:407944794362:web:c646f7670a8717a3fab943"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const tableBody = document.querySelector("#usersTable tbody");
+
+
+async function loadUsers(){
+
+const snapshot = await getDocs(collection(db,"users"));
+
+tableBody.innerHTML="";
+
+snapshot.forEach((docSnap)=>{
+
+const data = docSnap.data();
+const id = docSnap.id;
+
+const row = document.createElement("tr");
+
+row.innerHTML = `
+
+<td>${data.email || ""}</td>
+
+<td>
+<input id="dic_${id}" value="${data.DICIC || ""}">
+</td>
+
+<td>
+<input id="dph_${id}" value="${data.DPHstatus || ""}">
+</td>
+
+<td>
+<input id="adr_${id}" value="${data.adress || ""}">
+</td>
+
+<td>${data.createdAt || ""}</td>
+
+<td>
+<button onclick="saveUser('${id}')">Uložit</button>
+</td>
+
+`;
+
+tableBody.appendChild(row);
+
+});
+
+}
+
+
+
+window.saveUser = async function(id){
+
+const DICIC = document.getElementById("dic_"+id).value;
+const DPHstatus = document.getElementById("dph_"+id).value;
+const adress = document.getElementById("adr_"+id).value;
+
+const ref = doc(db,"users",id);
+
+await updateDoc(ref,{
+DICIC:DICIC,
+DPHstatus:DPHstatus,
+adress:adress
+});
+
+alert("Uživatel uložen");
+
+}
+
+
+loadUsers();
+
+</script>
+
+</body>
+</html>
