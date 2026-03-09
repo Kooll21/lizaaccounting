@@ -17,7 +17,7 @@
   <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Můj profil</a>
 </nav>
 
-<div class="container">
+<div class="section-card">
 
 <h2>Můj profil</h2>
 
@@ -37,7 +37,8 @@
 <select id="dphstatus">
     <!-- možnosti budou doplněny JS -->
 </select>
-
+</div>
+ <div class="section-card">
 <h3>Adresa</h3>
 
 <label>PSČ</label>
@@ -54,7 +55,9 @@
 
 <label>Číslo popisné</label>
 <input id="cislopopisne">
-
+</div>
+ <div class="section-card">
+ 
 <h3>Platební údaje</h3>
 
 <label>Číslo účtu</label>
@@ -67,7 +70,8 @@
 <input id="iban" readonly placeholder="IBAN se vygeneruje automaticky">
 
 <button onclick="saveProfile()">Uložit změny</button>
-
+</div>
+ <div class="section-card">
 <h3>Moje služby</h3>
 
 <div id="servicesList">
@@ -305,4 +309,5 @@ window.deleteService = async function(id) {
 </body>
 
 </html>
+
 
