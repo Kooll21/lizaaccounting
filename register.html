@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrace</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<h2>Registrace</h2>
+
+<div class="section-card">
+
+<label>Email</label>
+<input id="email">
+
+<label>Heslo</label>
+<input type="password" id="password">
+
+<label>Jméno</label>
+<input id="name">
+
+<label>Příjmení</label>
+<input id="surname">
+
+<label>IČ / DIČ</label>
+<input id="dicic">
+
+<label>DPH status</label>
+<select id="dphstatus">
+<option>Plátce DPH</option>
+<option>Neplátce DPH</option>
+</select>
+
+<button id="registerBtn">Registrovat</button>
+
+<p id="status"></p>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+ apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+ authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+ projectId: "lizaaccounting-d48b7",
+ storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+ messagingSenderId: "407944794362",
+ appId: "1:407944794362:web:c646f7670a8717a3fab943"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+document.getElementById("registerBtn").addEventListener("click", async ()=>{
+
+const email = document.getElementById("email").value;
+const password = document.getElementById("password").value;
+
+try{
+
+const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+const user = userCredential.user;
+
+await setDoc(doc(db,"users",user.uid),{
+
+email: email,
+
+name: document.getElementById("name").value,
+surname: document.getElementById("surname").value,
+DICIC: document.getElementById("dicic").value,
+DPHstatus: document.getElementById("dphstatus").value,
+
+PSC:"",
+mesto:"",
+ulice:"",
+cisloorientacni:"",
+cislopopisne:"",
+
+accountnumber:"",
+bankcode:"",
+IBAN:""
+
+});
+
+window.location = "admin.html";
+
+}catch(err){
+
+document.getElementById("status").textContent = err.message;
+
+}
+
+});
+
+</script>
+
+</body>
+</html>
