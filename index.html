@@ -97,8 +97,8 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
+import { getFirestore, collection, getDocs, addDoc, doc, setDoc,getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+ 
 const firebaseConfig = {
   apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
   authDomain: "lizaaccounting-d48b7.firebaseapp.com",
@@ -164,6 +164,22 @@ onAuthStateChanged(auth, async (user) => {
   const status = document.getElementById("authStatus");
   if (!user) { status.textContent = "Nepřihlášen"; return; }
   status.textContent = "Přihlášen jako: " + user.email;
+
+ // Načíst DPH status uživatele
+  const userDocRef = doc(db, "users", user.uid);
+  const userDocSnap = await getDoc(userDocRef);
+
+  if (userDocSnap.exists()) {
+    const userData = userDocSnap.data();
+
+    if (userData.DPHstatus === "Plátce DPH") {
+      document.getElementById("vatPercent").value = 21;
+    } else {
+      document.getElementById("vatPercent").value = 0;
+    }
+
+    calculateTotals();
+  }
 
   // načtení šablon služeb
   const servicesCol = collection(db, "users", user.uid, "services");
@@ -255,6 +271,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
 
 
