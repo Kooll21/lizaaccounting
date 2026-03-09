@@ -3,24 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <title>Nová faktura - Liza Accounting</title>
-<style>
-body { font-family: Arial; margin: 0; padding: 20px; background: #f4f4f4; }
-nav { background:#333; padding:10px; }
-nav a { color:white; margin-right:15px; text-decoration:none; }
-h2,h3,h4 { margin-top: 20px; }
-input, select, button { display:block; width:100%; padding:8px; margin-top:5px; box-sizing:border-box; }
-button { background:#2c7be5; border:none; color:white; cursor:pointer; margin-top:10px; }
-button:hover { background:#1a5ec8; }
-table { width:100%; border-collapse: collapse; margin-top: 10px; }
-table th, table td { border: 1px solid #ccc; padding:5px; text-align:center; }
-</style>
+
 </head>
 <body>
 
-<nav>
-<a href="index.html">Nová faktura</a>
-<a href="invoicelist.html">Seznam faktur</a>
-<a href="admin.html">Admin</a>
+ <nav>
+  <a href="index.html">Nová faktura</a>
+  <a href="invoicelist.html">Seznam faktur</a>
+  <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Můj profil</a>
 </nav>
 
 <h2>Nová faktura</h2>
@@ -255,4 +245,5 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </script>
 
 </body>
+
 </html>
