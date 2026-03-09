@@ -15,7 +15,7 @@
 
 <h2>Nová faktura</h2>
 <p id="authStatus"></p>
-
+<div class="section-card">
 <input type="text" id="invoiceNumber" placeholder="Číslo faktury">
 <label>Datum vystavení:</label>
 <input type="date" id="issueDate">
@@ -27,7 +27,9 @@
   <option value="Kartou">Kartou</option>
   <option value="Převodem na účet" selected>Převodem na účet</option>
 </select>
+</div>
 
+ <div class="section-card">
 <h3>Klient</h3>
 <input type="text" id="firstName" placeholder="Jméno">
 <input type="text" id="lastName" placeholder="Příjmení">
@@ -39,7 +41,10 @@
 <input type="text" id="vatId" placeholder="DIČ / IČ">
 
 <hr>
+</div>
 
+ 
+<div class="section-card">
 <h3>Přidat službu</h3>
 <label for="serviceTemplate">Vyber službu ze šablon:</label>
 <select id="serviceTemplate">
@@ -61,7 +66,10 @@
 
 <button id="addItemBtn">Přidat do faktury</button>
 <button id="saveServiceTemplateBtn">Uložit tuto službu do šablon</button>
+</div>
 
+
+ <div class="section-card">
 <table id="itemsTable">
   <thead>
     <tr>
@@ -85,7 +93,7 @@
 
 <button id="createInvoiceBtn">Vytvořit fakturu</button>
 <p id="invoiceStatusMessage"></p>
-
+</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
@@ -247,4 +255,5 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
