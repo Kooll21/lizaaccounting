@@ -99,6 +99,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, collection, getDocs, addDoc, doc, setDoc,getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+
+await signOut(auth);
+
+window.location = "login.html";
+
+});
  
 const firebaseConfig = {
   apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
