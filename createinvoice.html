@@ -101,29 +101,8 @@
 <p id="invoiceStatusMessage"></p>
 </div>
 <script type="module">
-import { auth } from "./firebase.js";
-import { db } from "./firebase.js";
 
-document.getElementById("logoutBtn").addEventListener("click", async ()=>{
 
-await signOut(auth);
-
-window.location = "login.html";
-
-});
- 
-const firebaseConfig = {
-  apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
-  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
-  projectId: "lizaaccounting-d48b7",
-  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
-  messagingSenderId: "407944794362",
-  appId: "1:407944794362:web:c646f7670a8717a3fab943"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 let items = [];
 let serviceTemplates = {};
@@ -284,6 +263,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
 
 
