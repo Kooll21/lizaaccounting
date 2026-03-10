@@ -7,30 +7,97 @@ body {
   color: #333;
 }
 
+/* ===== NAV BAR ===== */
 nav {
+  /* визуальный стиль (как у тебя изначально было) */
+  background: #2c3e50;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+
+  /* выравнивание */
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
-.nav-left, .nav-right {
+/* Контейнеры слева и справа */
+.nav-left,
+.nav-right {
   display: flex;
+  align-items: center;
   gap: 20px;
-  align-items: center;
 }
 
-.auth-only {
-  display: none; /* по умолчанию скрыто */
+/* Развести в стороны: правый блок уводим вправо */
+.nav-right {
+  margin-left: auto;
 }
 
+/* Ссылки в меню */
 nav a {
-  color: white;
+  color: #fff;                /* белые ссылки на тёмном фоне */
   text-decoration: none;
   font-weight: 500;
+  line-height: 1;             /* чтобы кликабельная зона была ровной */
+  display: inline-flex;       /* выравнивание по центру по вертикали */
+  align-items: center;
+  padding: 6px 0;             /* чуть кликабельной зоны, без “батончика” */
 }
 
 nav a:hover {
   text-decoration: underline;
+}
+
+/* Кнопка "Odhlásit" в шапке (не как большой primary button, а компактнее) */
+nav #logoutBtn {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.5);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+nav #logoutBtn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.8);
+}
+
+/* По умолчанию auth-only скрыты (покажет JS после логина) */
+.auth-only {
+  display: none;
+}
+
+/* ===== АДАПТИВ ===== */
+@media (max-width: 720px) {
+  nav {
+    flex-wrap: wrap;              /* переносим строки */
+    gap: 12px;
+  }
+
+  .nav-left,
+  .nav-right {
+    width: 100%;
+    justify-content: flex-start;  /* обе группы по левому краю */
+    gap: 14px;
+  }
+
+  .nav-right {
+    margin-left: 0;               /* убираем вытеснение вправо на мобилках */
+  }
+
+  /* Чуть компактнее элементы */
+  nav a {
+    padding: 4px 0;
+  }
+
+  nav #logoutBtn {
+    padding: 6px 10px;
+  }
 }
 
 h2, h3 {
