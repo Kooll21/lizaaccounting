@@ -294,14 +294,42 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     const price = inputs[2].value;
     const discount = inputs[3].value;
     const total = (quantity*price*(1-discount/100)).toFixed(2);
-tableBody.push([
-  name,
-  { text: quantity, alignment:'right' },
-  { text: price, alignment:'right' },
-  { text: discount > 0 ? discount : '', alignment:'right' },
-  { text: total, alignment:'right' }
-]);
-  });
+// --- проверяем, есть ли скидки ---
+const hasDiscount = Array.from(itemsTableBody.querySelectorAll('tr')).some(row => {
+  const discount = Number(row.querySelectorAll('input')[3].value) || 0;
+  return discount > 0;
+});
+
+// --- формируем заголовок таблицы ---
+const tableHeader = [
+  { text: 'Služba', bold: true, fillColor:'#f0f0f0' },
+  { text: 'Množství', bold: true, fillColor:'#f0f0f0', alignment:'right' },
+  { text: 'Cena', bold: true, fillColor:'#f0f0f0', alignment:'right' }
+];
+if (hasDiscount) tableHeader.push({ text: 'Sleva %', bold: true, fillColor:'#f0f0f0', alignment:'right' });
+tableHeader.push({ text: 'Celkem', bold: true, fillColor:'#f0f0f0', alignment:'right' });
+
+const tableBody = [tableHeader];
+
+// --- формируем строки таблицы ---
+itemsTableBody.querySelectorAll('tr').forEach(row => {
+  const inputs = row.querySelectorAll('input');
+  const name = inputs[0].value;
+  const quantity = inputs[1].value;
+  const price = inputs[2].value;
+  const discount = Number(inputs[3].value) || 0;
+  const total = (quantity * price * (1 - discount / 100)).toFixed(2);
+
+  const rowData = [
+    name,
+    { text: quantity, alignment:'right' },
+    { text: price, alignment:'right' }
+  ];
+  if (hasDiscount) rowData.push(discount > 0 ? discount : '');
+  rowData.push({ text: total, alignment:'right' });
+
+  tableBody.push(rowData);
+});
 
   const docDefinition = {
     content:[
@@ -457,6 +485,7 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
 
