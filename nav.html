@@ -1,16 +1,14 @@
-<!-- nav.html -->
 <nav>
-  <a href="index.html">Úvod</a>
+  <div class="nav-left">
+    <a href="index.html">Úvod</a>
+    <a href="createinvoice.html" class="auth-only">Nová faktura</a>
+    <a href="invoicelist.html" class="auth-only">Seznam faktur</a>
+    <a href="admin.html" class="auth-only">Můj profil</a>
+  </div>
 
-  <!-- Только авторизованным -->
-  <a href="createinvoice.html" class="auth-only" style="display:none;">Nová faktura</a>
-  <a href="invoicelist.html" class="auth-only" style="display:none;">Seznam faktur</a>
-  <a href="admin.html" class="auth-only" style="display:none;">Můj profil</a>
-
-  <!-- Только гостям -->
-  <a href="login.html" id="loginLink" class="guest-only" style="margin-left:auto;">Přihlášení</a>
-  <a href="register.html" id="registerLink" class="guest-only">Registrace</a>
-
-  <!-- Только авторизованным -->
-  <button id="logoutBtn" class="auth-only" style="display:none;">Odhlásit</button>
+  <div class="nav-right">
+    <a href="login.html" class="guest-only">Přihlášení</a>
+    <a href="register.html" class="guest-only">Registrace</a>
+    <button id="logoutBtn" class="auth-only">Odhlásit</button>
+  </div>
 </nav>
