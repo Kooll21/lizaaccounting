@@ -36,22 +36,37 @@
 
   <table id="invoiceTable" aria-label="Seznam faktur">
     <thead>
-      <tr>
-        <th data-column="client" role="button" tabindex="0">Klient <span class="sort-indicator" id="sort-client"></span></th>
-        <th data-column="issueDate" role="button" tabindex="0">Datum vystavení <span class="sort-indicator" id="sort-issueDate"></span></th>
-        <th data-column="dueDate" role="button" tabindex="0">Datum splatnosti <span class="sort-indicator" id="sort-dueDate"></span></th>
-        <th data-column="total" role="button" tabindex="0">Celkem (Kč) <span class="sort-indicator" id="sort-total"></span></th>
-        <th data-column="status" role="button" tabindex="0">Status <span class="sort-indicator" id="sort-status"></span></th>
-        <th>Akce</th>
-      </tr>
-      <tr class="filter-row">
-        <th><input type="text" data-filter="client" placeholder="Hledat…"></th>
-        <th><input type="text" data-filter="issueDate" placeholder="YYYY-MM-DD"></th>
-        <th><input type="text" data-filter="dueDate" placeholder="YYYY-MM-DD"></th>
-        <th><input type="text" data-filter="total" placeholder="Částka"></th>
-        <th><input type="text" data-filter="status" placeholder="Status"></th>
-        <th></th>
-      </tr>
+<tr>
+  <th data-column="invoiceNumber" role="button" tabindex="0">
+    Číslo faktury <span class="sort-indicator" id="sort-invoiceNumber"></span>
+  </th>
+  <th data-column="client" role="button" tabindex="0">
+    Klient <span class="sort-indicator" id="sort-client"></span>
+  </th>
+  <th data-column="issueDate" role="button" tabindex="0">
+    Datum vystavení <span class="sort-indicator" id="sort-issueDate"></span>
+  </th>
+  <th data-column="dueDate" role="button" tabindex="0">
+    Datum splatnosti <span class="sort-indicator" id="sort-dueDate"></span>
+  </th>
+  <th data-column="total" role="button" tabindex="0">
+    Celkem (Kč) <span class="sort-indicator" id="sort-total"></span>
+  </th>
+  <th data-column="status" role="button" tabindex="0">
+    Status <span class="sort-indicator" id="sort-status"></span>
+  </th>
+  <th>Akce</th>
+</tr>
+
+<tr class="filter-row">
+  <th><input type="text" data-filter="invoiceNumber" placeholder="Číslo"></th>
+  <th><input type="text" data-filter="client" placeholder="Hledat…"></th>
+  <th><input type="text" data-filter="issueDate" placeholder="YYYY-MM-DD"></th>
+  <th><input type="text" data-filter="dueDate" placeholder="YYYY-MM-DD"></th>
+  <th><input type="text" data-filter="total" placeholder="Částka"></th>
+  <th><input type="text" data-filter="status" placeholder="Status"></th>
+  <th></th>
+</tr>
     </thead>
     <tbody id="invoiceTableBody"></tbody>
   </table>
@@ -113,14 +128,17 @@
         const firstName = invoice.client?.firstName ?? "";
         const lastName  = invoice.client?.lastName ?? "";
         const clientName = [firstName, lastName].filter(Boolean).join(" ").trim() || (invoice.client?.company ?? "");
-        allInvoices.push({
-          id: docSnap.id,
-          client: clientName || "—",
-          issueDate: invoice.issueDate || "",
-          dueDate: invoice.dueDate || "",
-          total: typeof invoice.total === "number" ? invoice.total : Number(invoice.total) || 0,
-          status: invoice.status || "unpaid"
-        });
+
+allInvoices.push({
+  id: docSnap.id,
+  invoiceNumber: invoice.invoiceNumber || "—",
+  client: clientName || "—",
+  issueDate: invoice.issueDate || "",
+  dueDate: invoice.dueDate || "",
+  total: typeof invoice.total === "number" ? invoice.total : Number(invoice.total) || 0,
+  status: invoice.status || "unpaid"
+});
+
       });
     }
 
@@ -149,15 +167,20 @@
         const tr = document.createElement("tr");
         tr.classList.add("row-clickable");
         tr.setAttribute("tabindex", "0"); // a11y: фокус по Tab
-        tr.innerHTML = `
-          <td>${escapeHtml(inv.client)}</td>
-          <td>${escapeHtml(inv.issueDate)}</td>
-          <td>${escapeHtml(inv.dueDate)}</td>
-          <td>${Number(inv.total).toFixed(2)} Kč</td>
-          <td>${escapeHtml(inv.status)}</td>
-          <td>
-            <button type="button" class="copy-btn" data-id="${inv.id}" aria-label="Kopírovat fakturu">Kopírovat</button>
-          </td>
+        
+tr.innerHTML = `
+  <td>${escapeHtml(inv.invoiceNumber)}</td>
+  <td>${escapeHtml(inv.client)}</td>
+  <td>${escapeHtml(inv.issueDate)}</td>
+  <td>${escapeHtml(inv.dueDate)}</td>
+  <td>${Number(inv.total).toFixed(2)} Kč</td>
+  <td>${escapeHtml(inv.status)}</td>
+  <td>
+    <button type="button" class="copy-btn" data-id="${inv.id}" aria-label="Kopírovat fakturu">
+      Kopírovat
+    </button>
+  </td>
+
         `;
 
         // Клик по строке — открыть детали
@@ -228,13 +251,16 @@
     }
 
     function updateSortIndicators() {
-      const indicators = {
-        client: document.getElementById("sort-client"),
-        issueDate: document.getElementById("sort-issueDate"),
-        dueDate: document.getElementById("sort-dueDate"),
-        total: document.getElementById("sort-total"),
-        status: document.getElementById("sort-status"),
-      };
+      
+const indicators = {
+  invoiceNumber: document.getElementById("sort-invoiceNumber"),
+  client: document.getElementById("sort-client"),
+  issueDate: document.getElementById("sort-issueDate"),
+  dueDate: document.getElementById("sort-dueDate"),
+  total: document.getElementById("sort-total"),
+  status: document.getElementById("sort-status"),
+};
+
       Object.values(indicators).forEach(el => { if (el) el.textContent = ""; });
       if (currentSort.column && indicators[currentSort.column]) {
         indicators[currentSort.column].textContent = currentSort.direction === 1 ? "▲" : "▼";
