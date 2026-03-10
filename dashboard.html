@@ -1,1 +1,360 @@
 
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+
+<link rel="stylesheet" href="styles.css">
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+
+    h2 {
+        margin-top: 20px;
+        margin-bottom: 10px;
+    }
+
+    .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .card-row {
+        display: flex;
+        gap: 20px;
+    }
+
+    .card {
+        flex: 1;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .card-title {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .card-value {
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+
+    .charts-row {
+        display: flex;
+        gap: 20px;
+    }
+
+    .chart-box {
+        flex: 1;
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .full-box {
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+</style>
+
+<!-- Navigation placed here -->
+<div id="nav-container"></div>
+
+<script type="module">
+    const container = document.getElementById("nav-container");
+    const html = await fetch("nav.html").then(r => r.text());
+    container.innerHTML = html;
+
+    const { initNavAuth } = await import("./nav.js");
+    initNavAuth();
+</script>
+
+</head>
+
+<body>
+
+<h2>Dashboard</h2>
+<p id="authStatus"></p>
+
+<div class="dashboard-container">
+
+    <!-- ROW 1 -->
+    <div class="card-row">
+        <div class="card">
+            <div class="card-title">Obrat tento měsíc</div>
+            <div class="card-value" id="revenueThisMonth">–</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Celkový obrat YTD</div>
+            <div class="card-value" id="revenueYTD">–</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Nezaplacené faktury</div>
+            <div class="card-value" id="unpaidTotal">–</div>
+        </div>
+    </div>
+
+    <!-- ROW 2 -->
+    <div class="card-row">
+        <div class="card">
+            <div class="card-title">Po splatnosti</div>
+            <div class="card-value" id="overdueTotal">–</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Počet faktur tento měsíc</div>
+            <div class="card-value" id="invoiceCountThisMonth">–</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Průměrná výše faktury</div>
+            <div class="card-value" id="averageInvoice">–</div>
+        </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+        <div class="chart-box">
+            <h3>Obrat po měsících</h3>
+            <canvas id="revenueChart"></canvas>
+        </div>
+
+        <div class="chart-box">
+            <h3>Status faktur</h3>
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+
+    <!-- TOP CLIENTS -->
+    <div class="full-box">
+        <h3>Top 5 klientů podle obratu</h3>
+        <ul id="topClients"></ul>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="full-box">
+        <h3>Souhrn za posledních 30 dní</h3>
+        <p>Faktury vystavené: <b id="issued30"></b></p>
+        <p>Zaplacené: <b id="paid30"></b></p>
+        <p>Noví klienti: <b id="newClients30"></b></p>
+    </div>
+</div>
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- FIREBASE & LOGIC -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+  projectId: "lizaaccounting-d48b7",
+  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+  messagingSenderId: "407944794362",
+  appId: "1:407944794362:web:c646f7670a8717a3fab943"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const authStatus = document.getElementById("authStatus");
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        authStatus.textContent = "Nepřihlášen.";
+        return;
+    }
+
+    authStatus.textContent = "Přihlášen jako: " + user.email;
+
+    const invoices = await loadInvoices(user.uid);
+    calculateStatistics(invoices);
+    renderMonthlyChart(invoices);
+    renderStatusChart(invoices);
+    renderTopClients(invoices);
+    render30DaySummary(invoices);
+});
+
+/* ------------------- LOAD FIRESTORE ------------------- */
+
+async function loadInvoices(uid) {
+    const invoicesRef = collection(db, "users", uid, "invoices");
+    const snapshot = await getDocs(invoicesRef);
+
+    const items = [];
+
+    snapshot.forEach(doc => {
+        const d = doc.data();
+        items.push({
+            id: doc.id,
+            client: d.client.firstName + " " + d.client.lastName,
+            issueDate: d.issueDate ? new Date(d.issueDate) : null,
+            dueDate: d.dueDate ? new Date(d.dueDate) : null,
+            total: d.total ? d.total : 0,
+            status: d.status || "unpaid"
+        });
+    });
+
+    return items;
+}
+
+/* ------------------- STATISTICS ------------------- */
+
+function calculateStatistics(invoices) {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    let revenueMonth = 0;
+    let revenueYTD = 0;
+    let unpaidTotal = 0;
+    let overdueTotal = 0;
+    let invoiceCountThisMonth = 0;
+
+    let sum = 0;
+
+    invoices.forEach(inv => {
+        const amount = inv.total;
+        sum += amount;
+
+        if (inv.issueDate && inv.issueDate.getFullYear() === thisYear)
+            revenueYTD += amount;
+
+        if (inv.issueDate &&
+            inv.issueDate.getMonth() === thisMonth &&
+            inv.issueDate.getFullYear() === thisYear) {
+            revenueMonth += amount;
+            invoiceCountThisMonth++;
+        }
+
+        if (inv.status === "unpaid") unpaidTotal += amount;
+
+        if (inv.status === "unpaid" && inv.dueDate && inv.dueDate < now)
+            overdueTotal += amount;
+    });
+
+    const avgInvoice = invoices.length ? (sum / invoices.length) : 0;
+
+    document.getElementById("revenueThisMonth").textContent = revenueMonth.toFixed(2) + " Kč";
+    document.getElementById("revenueYTD").textContent = revenueYTD.toFixed(2) + " Kč";
+    document.getElementById("unpaidTotal").textContent = unpaidTotal.toFixed(2) + " Kč";
+    document.getElementById("overdueTotal").textContent = overdueTotal.toFixed(2) + " Kč";
+    document.getElementById("invoiceCountThisMonth").textContent = invoiceCountThisMonth;
+    document.getElementById("averageInvoice").textContent = avgInvoice.toFixed(2) + " Kč";
+}
+
+/* ------------------- MONTHLY CHART ------------------- */
+
+function renderMonthlyChart(invoices) {
+    const months = Array(12).fill(0);
+
+    invoices.forEach(inv => {
+        if (inv.issueDate) {
+            const m = inv.issueDate.getMonth();
+            months[m] += inv.total;
+        }
+    });
+
+    new Chart(document.getElementById("revenueChart"), {
+        type: "bar",
+        data: {
+            labels: ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"],
+            datasets: [{
+                label: "Obrat (Kč)",
+                backgroundColor: "#4a90e2",
+                data: months
+            }]
+        }
+    });
+}
+
+/* ------------------- STATUS PIE CHART ------------------- */
+
+function renderStatusChart(invoices) {
+    let paid = 0, unpaid = 0, overdue = 0;
+    const now = new Date();
+
+    invoices.forEach(inv => {
+        if (inv.status === "paid") paid += inv.total;
+        else if (inv.status === "unpaid" && inv.dueDate < now) overdue += inv.total;
+        else if (inv.status === "unpaid") unpaid += inv.total;
+    });
+
+    new Chart(document.getElementById("statusChart"), {
+        type: "pie",
+        data: {
+            labels: ["Zaplaceno", "Nezaplaceno", "Po splatnosti"],
+            datasets: [{
+                data: [paid, unpaid, overdue],
+                backgroundColor: ["#4caf50", "#ffca28", "#f44336"]
+            }]
+        }
+    });
+}
+
+/* ------------------- TOP CLIENTS ------------------- */
+
+function renderTopClients(invoices) {
+    const totals = {};
+
+    invoices.forEach(inv => {
+        totals[inv.client] = (totals[inv.client] || 0) + inv.total;
+    });
+
+    const sorted = Object.entries(totals)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0,5);
+
+    const list = document.getElementById("topClients");
+    list.innerHTML = "";
+
+    sorted.forEach(([name, amount]) => {
+        const li = document.createElement("li");
+        li.textContent = `${name} — ${amount.toFixed(2)} Kč`;
+        list.appendChild(li);
+    });
+}
+
+/* ------------------- SUMMARY 30 DAYS ------------------- */
+
+function render30DaySummary(invoices) {
+    const now = new Date();
+    const cutoff = new Date();
+    cutoff.setDate(now.getDate() - 30);
+
+    let issued = 0, paid = 0;
+    let newClients = new Set();
+
+    invoices.forEach(inv => {
+        if (inv.issueDate && inv.issueDate >= cutoff) {
+            issued++;
+            newClients.add(inv.client);
+        }
+        if (inv.status === "paid" && inv.issueDate >= cutoff) {
+            paid++;
+        }
+    });
+
+    document.getElementById("issued30").textContent = issued;
+    document.getElementById("paid30").textContent = paid;
+    document.getElementById("newClients30").textContent = newClients.size;
+}
+</script>
+
+</body>
+</html>
