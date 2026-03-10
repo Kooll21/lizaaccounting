@@ -8,6 +8,17 @@ body {
 }
 
 /* ===== NAV BAR ===== */
+
+
+.hidden-nav {
+  visibility: hidden; /* не занимает времени рендера, не влияет на layout */
+}
+
+/* После включения JS — показываем */
+.nav-ready .hidden-nav {
+  visibility: visible;
+}
+
 nav {
   /* визуальный стиль (как у тебя изначально было) */
   background: #2c3e50;
