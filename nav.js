@@ -9,19 +9,13 @@ function setDisplay(el, value) {
 function updateMenu(user) {
   const authOnly = document.querySelectorAll(".auth-only");
   const guestOnly = document.querySelectorAll(".guest-only");
-  const loginLink = document.getElementById("loginLink");
-  const registerLink = document.getElementById("registerLink");
 
   if (user) {
-    // Показать авторизованным
-    authOnly.forEach(el => setDisplay(el, "inline-block"));
-    // Скрыть гостевые
+    authOnly.forEach(el => setDisplay(el, "inline-flex"));
     guestOnly.forEach(el => setDisplay(el, "none"));
   } else {
-    // Скрыть авторизованные
     authOnly.forEach(el => setDisplay(el, "none"));
-    // Показать гостевые
-    guestOnly.forEach(el => setDisplay(el, "inline-block"));
+    guestOnly.forEach(el => setDisplay(el, "inline-flex"));
   }
 }
 
