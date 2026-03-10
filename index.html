@@ -10,14 +10,15 @@
 <body>
 
   <!-- NAV -->
- <nav>
-  <a href="index.html">Úvod</a>
-  <a href="createinvoice.html">Nová faktura</a>
-  <a href="invoicelist.html">Seznam faktur</a>
-  <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Můj profil</a>
-   <a href="login.html" style="margin-left:auto;">Přihlášení</a>
-<button id="logoutBtn">Odhlásit</button>
-</nav>
+<div id="nav-container"></div>
+<script>
+  fetch("nav.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("nav-container").innerHTML = html;
+    });
+</script>
+  <script type="module" src="nav.js"></script>
 
   <!-- HERO -->
   <section id="hero" class="section-card">
