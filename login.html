@@ -9,6 +9,18 @@
 
 <body>
 
+   <div id="nav-container"></div>
+
+  <script type="module">
+    const container = document.getElementById("nav-container");
+    const html = await fetch("nav.html").then(r => r.text());
+    container.innerHTML = html;
+
+    // После того как HTML меню вставлен — подключаем логику
+    const { initNavAuth } = await import("./nav.js");
+    initNavAuth();
+  </script>
+
 <h2>Přihlášení</h2>
 
 <div class="section-card">
