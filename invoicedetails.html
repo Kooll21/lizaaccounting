@@ -294,13 +294,13 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     const price = inputs[2].value;
     const discount = inputs[3].value;
     const total = (quantity*price*(1-discount/100)).toFixed(2);
-    tableBody.push([
-      name,
-      { text: quantity, alignment:'right' },
-      { text: price, alignment:'right' },
-      { text: discount, alignment:'right' },
-      { text: total, alignment:'right' }
-    ]);
+tableBody.push([
+  name,
+  { text: quantity, alignment:'right' },
+  { text: price, alignment:'right' },
+  { text: discount > 0 ? discount : '', alignment:'right' },
+  { text: total, alignment:'right' }
+]);
   });
 
   const docDefinition = {
@@ -365,13 +365,13 @@ Variabilní symbol: ${invoiceNo}
           },
           { text:'', width:'*' },
           {
-            table:{
-              body:[
-               [`Mezisoučet`, `${subtotal.toFixed(2)} Kč`],
-[`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`],
-[{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
-              ]
-            },
+table:{
+  body:[
+    [`Mezisoučet`, `${subtotal.toFixed(2)} Kč`],
+    ...(vatPercent > 0 ? [[`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`]] : []),
+    [{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
+  ]
+}
             layout:'noBorders',
             width: 'auto',
             alignment:'right'
@@ -456,6 +456,7 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
 
