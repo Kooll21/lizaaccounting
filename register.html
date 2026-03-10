@@ -8,13 +8,17 @@
 </head>
 
 <body>
- <nav>
-  <a href="index.html">Úvod</a>
-  <a href="createinvoice.html">Nová faktura</a>
-  <a href="invoicelist.html">Seznam faktur</a>
-  <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Můj profil</a>
-<button id="logoutBtn">Odhlásit</button>
-</nav>
+  <div id="nav-container"></div>
+
+  <script type="module">
+    const container = document.getElementById("nav-container");
+    const html = await fetch("nav.html").then(r => r.text());
+    container.innerHTML = html;
+
+    // После того как HTML меню вставлен — подключаем логику
+    const { initNavAuth } = await import("./nav.js");
+    initNavAuth();
+  </script>
  
 <h2>Registrace</h2>
 
