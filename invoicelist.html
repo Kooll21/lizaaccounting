@@ -177,7 +177,7 @@
         const copyBtn = tr.querySelector(".copy-btn");
         copyBtn.addEventListener("click", (e) => {
           e.stopPropagation();
-          window.location.href = `newinvoice.html?copyId=${inv.id}`;
+          window.location.href = `createinvoice.html?copyId=${inv.id}`;
         });
 
         invoiceTableBody.appendChild(tr);
