@@ -272,7 +272,7 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
 
     // jednoduché složení IBAN pro QR platbu (pokud nemáš uložený IBAN)
     // Pokud máš uložený IBAN přímo v profilu, můžeš použít: supplierProfile.IBAN
-    const IBAN = supplierProfile?.IBAN || CZ00${bank}${account.padStart(16,'0')};
+    const IBAN = supplierProfile?.IBAN || `CZ00${bank}${account.padStart(16,'0')}`;
 
     qrPayment = `SPD*1.0*ACC:${IBAN}*AM:${amount}*CC:CZK*X-VS:${invoiceNo}`;
   }
@@ -456,6 +456,7 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
 
