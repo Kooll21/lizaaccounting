@@ -1,6 +1,5 @@
 // nav.js
-import { auth } from "./firebase.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { auth, onAuthStateChanged, signOut } from "./firebase.js";
 
 function setDisplay(el, value) {
   if (el) el.style.display = value;
