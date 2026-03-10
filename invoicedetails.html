@@ -365,17 +365,18 @@ Variabilní symbol: ${invoiceNo}
           },
           { text:'', width:'*' },
           {
-table:{
-  body:[
-    [`Mezisoučet`, `${subtotal.toFixed(2)} Kč`],
-    ...(vatPercent > 0 ? [[`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`]] : []),
-    [{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
-  ]
+  table: {
+    body: [
+      [`Mezisoučet`, `${subtotal.toFixed(2)} Kč`],
+      ...(vatPercent > 0 ? [[`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`]] : []),
+      [{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
+    ]
+  },
+  layout:'noBorders',
+  width: 'auto',
+  alignment:'right'
 }
-            layout:'noBorders',
-            width: 'auto',
-            alignment:'right'
-          }
+          
         ],
         columnGap: 10,
         margin:[0,10,0,0]
@@ -456,6 +457,7 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
 
