@@ -67,10 +67,15 @@ nav #logoutBtn:hover {
   border-color: rgba(255,255,255,0.8);
 }
 
-/* По умолчанию auth-only скрыты (покажет JS после логина) */
+
 .auth-only {
-  display: none;
+  display: none !important;
 }
+
+.guest-only {
+  display: none !important;
+}
+
 
 /* ===== АДАПТИВ ===== */
 @media (max-width: 720px) {
