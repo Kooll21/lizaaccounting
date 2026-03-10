@@ -256,80 +256,57 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
   const clientZip = document.getElementById("zip").value;
   const clientCountry = document.getElementById("country").value;
   const clientVAT = document.getElementById("vatId").value;
-  const vatPercent = document.getElementById("vatPercent").value || 21;
+  const vatPercent = Number(document.getElementById("vatPercent").value) || 0;
   const subtotal = parseFloat(document.getElementById("subtotal").textContent) || 0;
   const vatAmount = parseFloat(document.getElementById("vatAmount").textContent) || 0;
   const totalAmount = parseFloat(document.getElementById("totalAmount").textContent) || 0;
 
-  // --- QR platba podle údajů z profilu dodavatele ---
+  // --- QR platba ---
   let qrPayment = null;
   if (paymentMethod === "Převodem na účet") {
     const amount = totalAmount.toFixed(2);
-
-    // číslo účtu a kód banky z databáze
     const account = supplierProfile?.accountnumber || "0000000000";
     const bank = supplierProfile?.bankcode || "0000";
-
-    // jednoduché složení IBAN pro QR platbu (pokud nemáš uložený IBAN)
-    // Pokud máš uložený IBAN přímo v profilu, můžeš použít: supplierProfile.IBAN
     const IBAN = supplierProfile?.IBAN || `CZ00${bank}${account.padStart(16,'0')}`;
-
     qrPayment = `SPD*1.0*ACC:${IBAN}*AM:${amount}*CC:CZK*X-VS:${invoiceNo}`;
   }
 
-  const tableBody = [
-    [
-      { text:'Služba', bold:true, fillColor:'#f0f0f0' },
-      { text:'Množství', bold:true, fillColor:'#f0f0f0', alignment:'right' },
-      { text:'Cena', bold:true, fillColor:'#f0f0f0', alignment:'right' },
-      { text:'Sleva %', bold:true, fillColor:'#f0f0f0', alignment:'right' },
-      { text:'Celkem', bold:true, fillColor:'#f0f0f0', alignment:'right' }
-    ]
-  ];
+  // --- проверяем, есть ли скидки ---
+  const hasDiscount = Array.from(itemsTableBody.querySelectorAll('tr')).some(row => {
+    const discount = Number(row.querySelectorAll('input')[3].value) || 0;
+    return discount > 0;
+  });
 
-  itemsTableBody.querySelectorAll('tr').forEach(row=>{
+  // --- заголовок таблицы ---
+  const tableHeader = [
+    { text: 'Služba', bold: true, fillColor:'#f0f0f0' },
+    { text: 'Množství', bold: true, fillColor:'#f0f0f0', alignment:'right' },
+    { text: 'Cena', bold: true, fillColor:'#f0f0f0', alignment:'right' }
+  ];
+  if (hasDiscount) tableHeader.push({ text: 'Sleva %', bold: true, fillColor:'#f0f0f0', alignment:'right' });
+  tableHeader.push({ text: 'Celkem', bold: true, fillColor:'#f0f0f0', alignment:'right' });
+
+  const tableBody = [tableHeader];
+
+  // --- строки таблицы ---
+  itemsTableBody.querySelectorAll('tr').forEach(row => {
     const inputs = row.querySelectorAll('input');
     const name = inputs[0].value;
-    const quantity = inputs[1].value;
-    const price = inputs[2].value;
-    const discount = inputs[3].value;
-    const total = (quantity*price*(1-discount/100)).toFixed(2);
-// --- проверяем, есть ли скидки ---
-const hasDiscount = Array.from(itemsTableBody.querySelectorAll('tr')).some(row => {
-  const discount = Number(row.querySelectorAll('input')[3].value) || 0;
-  return discount > 0;
-});
+    const quantity = Number(inputs[1].value);
+    const price = Number(inputs[2].value);
+    const discount = Number(inputs[3].value) || 0;
+    const total = (quantity * price * (1 - discount / 100)).toFixed(2);
 
-// --- формируем заголовок таблицы ---
-const tableHeader = [
-  { text: 'Služba', bold: true, fillColor:'#f0f0f0' },
-  { text: 'Množství', bold: true, fillColor:'#f0f0f0', alignment:'right' },
-  { text: 'Cena', bold: true, fillColor:'#f0f0f0', alignment:'right' }
-];
-if (hasDiscount) tableHeader.push({ text: 'Sleva %', bold: true, fillColor:'#f0f0f0', alignment:'right' });
-tableHeader.push({ text: 'Celkem', bold: true, fillColor:'#f0f0f0', alignment:'right' });
+    const rowData = [
+      name,
+      { text: quantity, alignment:'right' },
+      { text: price, alignment:'right' }
+    ];
+    if (hasDiscount) rowData.push(discount > 0 ? discount : '');
+    rowData.push({ text: total, alignment:'right' });
 
-const tableBody = [tableHeader];
-
-// --- формируем строки таблицы ---
-itemsTableBody.querySelectorAll('tr').forEach(row => {
-  const inputs = row.querySelectorAll('input');
-  const name = inputs[0].value;
-  const quantity = inputs[1].value;
-  const price = inputs[2].value;
-  const discount = Number(inputs[3].value) || 0;
-  const total = (quantity * price * (1 - discount / 100)).toFixed(2);
-
-  const rowData = [
-    name,
-    { text: quantity, alignment:'right' },
-    { text: price, alignment:'right' }
-  ];
-  if (hasDiscount) rowData.push(discount > 0 ? discount : '');
-  rowData.push({ text: total, alignment:'right' });
-
-  tableBody.push(rowData);
-});
+    tableBody.push(rowData);
+  });
 
   const docDefinition = {
     content:[
@@ -340,9 +317,9 @@ itemsTableBody.querySelectorAll('tr').forEach(row => {
             { text:`Číslo: ${invoiceNo}`, margin:[0,5,0,20] }
           ],
           [
-{ text:`Datum vystavení: ${issueDate}`, alignment:'right' },
-{ text:`Datum splatnosti: ${dueDate}`, alignment:'right' },
-{ text:`Způsob platby: ${paymentMethod}`, alignment:'right' }
+            { text:`Datum vystavení: ${issueDate}`, alignment:'right' },
+            { text:`Datum splatnosti: ${dueDate}`, alignment:'right' },
+            { text:`Způsob platby: ${paymentMethod}`, alignment:'right' }
           ]
         ]
       },
@@ -350,30 +327,30 @@ itemsTableBody.querySelectorAll('tr').forEach(row => {
         columns:[
           [
             { text:'Dodavatel', style:'subheader' },
-{ text:`
+            { text:`
 ${supplierProfile?.name || ""} ${supplierProfile?.surname || ""}
 ${supplierProfile?.ulice || ""} ${supplierProfile?.cislopopisne || ""}/${supplierProfile?.cisloorientacni || ""}
 ${supplierProfile?.PSC || ""} ${supplierProfile?.mesto || ""}
 IČO: ${supplierProfile?.DICIC || ""}
 ${supplierProfile?.DPHstatus || ""}
-`}
+` }
           ],
           [
             { text:'Odběratel', style:'subheader' },
-           { text:`
+            { text:`
 ${clientName}
 ${clientCompany}
 ${clientStreet}
 ${clientZip} ${clientCity}
 ${clientCountry}
 IČ/DIČ: ${clientVAT}
-`}
+` }
           ]
         ],
         margin:[0,0,0,20]
       },
       {
-        table:{ headerRows:1, widths:['*','auto','auto','auto','auto'], body: tableBody },
+        table:{ headerRows:1, widths: hasDiscount ? ['*','auto','auto','auto','auto'] : ['*','auto','auto','auto'], body: tableBody },
         layout:'lightHorizontalLines',
         margin:[0,10,0,20]
       },
@@ -382,29 +359,25 @@ IČ/DIČ: ${clientVAT}
           {
             stack:[
               paymentMethod === "Převodem na účet"
-               ? { text:`
-Bankovní účet: ${supplierProfile?.accountnumber || "neuvedeno"}/${supplierProfile?.bankcode || "neuvedeno"}
-Variabilní symbol: ${invoiceNo}
-`, margin:[0,10,0,0] }
-                : { text:'' }
+               ? { text:`Bankovní účet: ${supplierProfile?.accountnumber || "neuvedeno"}/${supplierProfile?.bankcode || "neuvedeno"}\nVariabilní symbol: ${invoiceNo}`, margin:[0,10,0,0] }
+               : { text:'' }
             ],
             width: 'auto',
             alignment: 'left'
           },
           { text:'', width:'*' },
           {
-  table: {
-    body: [
-      [`Mezisoučet`, `${subtotal.toFixed(2)} Kč`],
-      ...(vatPercent > 0 ? [[`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`]] : []),
-      [{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
-    ]
-  },
-  layout:'noBorders',
-  width: 'auto',
-  alignment:'right'
-}
-          
+            table: {
+              body: [
+                [`Mezisoučet`, `${subtotal.toFixed(2)} Kč`],
+                ...(vatPercent > 0 ? [[`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`]] : []),
+                [{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
+              ]
+            },
+            layout:'noBorders',
+            width: 'auto',
+            alignment:'right'
+          }
         ],
         columnGap: 10,
         margin:[0,10,0,0]
@@ -435,6 +408,7 @@ Variabilní symbol: ${invoiceNo}
 
   pdfMake.createPdf(docDefinition).download(`Faktura_${invoiceNo}.pdf`);
 });
+  
 
 // --- recalc totals ---
 function recalcTotals() {
@@ -485,6 +459,7 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
 
