@@ -101,10 +101,8 @@
 <p id="invoiceStatusMessage"></p>
 </div>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, addDoc, doc, setDoc,getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { auth } from "./firebase.js";
+import { db } from "./firebase.js";
 
 document.getElementById("logoutBtn").addEventListener("click", async ()=>{
 
@@ -286,6 +284,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
 
 
