@@ -274,7 +274,7 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     // Pokud máš uložený IBAN přímo v profilu, můžeš použít: supplierProfile.IBAN
     const IBAN = supplierProfile?.IBAN || CZ00${bank}${account.padStart(16,'0')};
 
-    qrPayment = SPD*1.0*ACC:${IBAN}*AM:${amount}*CC:CZK*X-VS:${invoiceNo};
+    qrPayment = `SPD*1.0*ACC:${IBAN}*AM:${amount}*CC:CZK*X-VS:${invoiceNo}`;
   }
 
   const tableBody = [
@@ -308,13 +308,13 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
       {
         columns:[
           [
-            { text:FAKTURA, style:'header' },
-            { text:Číslo: ${invoiceNo}, margin:[0,5,0,20] }
+            { text:'FAKTURA', style:'header' },
+            { text:`Číslo: ${invoiceNo}`, margin:[0,5,0,20] }
           ],
           [
-            { text:Datum vystavení: ${issueDate}, alignment:'right' },
-            { text:Datum splatnosti: ${dueDate}, alignment:'right' },
-            { text:Způsob platby: ${paymentMethod}, alignment:'right' }
+{ text:`Datum vystavení: ${issueDate}`, alignment:'right' },
+{ text:`Datum splatnosti: ${dueDate}`, alignment:'right' },
+{ text:`Způsob platby: ${paymentMethod}`, alignment:'right' }
           ]
         ]
       },
@@ -322,24 +322,24 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
         columns:[
           [
             { text:'Dodavatel', style:'subheader' },
-            { text:
+{ text:`
 ${supplierProfile?.name || ""} ${supplierProfile?.surname || ""}
 ${supplierProfile?.ulice || ""} ${supplierProfile?.cislopopisne || ""}/${supplierProfile?.cisloorientacni || ""}
 ${supplierProfile?.PSC || ""} ${supplierProfile?.mesto || ""}
 IČO: ${supplierProfile?.DICIC || ""}
 ${supplierProfile?.DPHstatus || ""}
-            }
+`}
           ],
           [
             { text:'Odběratel', style:'subheader' },
-            { text:
+           { text:`
 ${clientName}
 ${clientCompany}
 ${clientStreet}
 ${clientZip} ${clientCity}
 ${clientCountry}
 IČ/DIČ: ${clientVAT}
-            }
+`}
           ]
         ],
         margin:[0,0,0,20]
@@ -354,9 +354,10 @@ IČ/DIČ: ${clientVAT}
           {
             stack:[
               paymentMethod === "Převodem na účet"
-                ? { text:
+               ? { text:`
 Bankovní účet: ${supplierProfile?.accountnumber || "neuvedeno"}/${supplierProfile?.bankcode || "neuvedeno"}
-Variabilní symbol: ${invoiceNo}, margin:[0,10,0,0] }
+Variabilní symbol: ${invoiceNo}
+`, margin:[0,10,0,0] }
                 : { text:'' }
             ],
             width: 'auto',
@@ -366,9 +367,9 @@ Variabilní symbol: ${invoiceNo}, margin:[0,10,0,0] }
           {
             table:{
               body:[
-                ['Mezisoučet', ${subtotal.toFixed(2)} Kč],
-                [DPH (${vatPercent}%), ${vatAmount.toFixed(2)} Kč],
-                [{ text:'CELKEM', bold:true }, { text:${totalAmount.toFixed(2)} Kč, bold:true }]
+               [`Mezisoučet`, `${subtotal.toFixed(2)} Kč`],
+[`DPH (${vatPercent}%)`, `${vatAmount.toFixed(2)} Kč`],
+[{ text:'CELKEM', bold:true }, { text:`${totalAmount.toFixed(2)} Kč`, bold:true }]
               ]
             },
             layout:'noBorders',
@@ -403,7 +404,7 @@ Variabilní symbol: ${invoiceNo}, margin:[0,10,0,0] }
     pageMargins:[40,50,40,50]
   };
 
-  pdfMake.createPdf(docDefinition).download(Faktura_${invoiceNo}.pdf);
+  pdfMake.createPdf(docDefinition).download(`Faktura_${invoiceNo}.pdf`);
 });
 
 // --- recalc totals ---
@@ -455,5 +456,6 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
