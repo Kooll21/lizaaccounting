@@ -34,19 +34,27 @@ links.forEach(link => {
 
 <h2>Seznam faktur</h2>
 <p id="authStatus"></p>
-<table>
+<h2>Seznam faktur</h2>
+<p id="authStatus"></p>
+
+<table id="invoiceTable">
   <thead>
     <tr>
-      <th>Klient</th>
-      <th>Datum vystavení</th>
-      <th>Datum splatnosti</th>
-      <th>Celkem (Kč)</th>
-      <th>Status</th>
+      <th data-column="client">Klient</th>
+      <th data-column="issueDate">Datum vystavení</th>
+      <th data-column="dueDate">Datum splatnosti</th>
+      <th data-column="total">Celkem (Kč)</th>
+      <th data-column="status">Status</th>
+    </tr>
+    <tr class="filter-row">
+      <th><input type="text" data-filter="client" placeholder="Hledat…"></th>
+      <th><input type="text" data-filter="issueDate" placeholder="YYYY-MM-DD"></th>
+      <th><input type="text" data-filter="dueDate" placeholder="YYYY-MM-DD"></th>
+      <th><input type="text" data-filter="total" placeholder="Částka"></th>
+      <th><input type="text" data-filter="status" placeholder="Status"></th>
     </tr>
   </thead>
-  <tbody id="invoiceTableBody">
-    <!-- faktury se načtou sem -->
-  </tbody>
+  <tbody id="invoiceTableBody"></tbody>
 </table>
 
 <script type="module">
@@ -70,14 +78,17 @@ const db = getFirestore(app);
 const authStatus = document.getElementById("authStatus");
 const invoiceTableBody = document.getElementById("invoiceTableBody");
 
+let allInvoices = [];
+let currentSort = { column: null, direction: 1 };
+
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     authStatus.textContent = "Přihlášen jako: " + user.email;
     await loadInvoices(user.uid);
+    renderTable();
   } else {
     authStatus.textContent = "Nepřihlášen. Prosím přihlašte se.";
     invoiceTableBody.innerHTML = "";
-    // Здесь можно добавить простой prompt для логина
     const email = prompt("Zadejte email:");
     const password = prompt("Zadejte heslo:");
     if (email && password) {
@@ -94,36 +105,89 @@ async function loadInvoices(uid) {
   const invoicesRef = collection(db, "users", uid, "invoices");
   const snapshot = await getDocs(invoicesRef);
 
-  invoiceTableBody.innerHTML = ""; // очистка таблицы
-
-  snapshot.forEach(docSnap => {
-    const invoice = docSnap.data();
-    const clientName = invoice.client.firstName + " " + invoice.client.lastName;
-    const issueDate = invoice.issueDate || "";
-    const dueDate = invoice.dueDate || "";
-    const total = invoice.total ? invoice.total.toFixed(2) : "0.00";
-    const status = invoice.status || "unpaid";
-
-    const row = document.createElement("tr");
-    row.setAttribute("data-id", docSnap.id);
-    row.style.cursor = "pointer";
-    row.innerHTML = `
-      <td>${clientName}</td>
-      <td>${issueDate}</td>
-      <td>${dueDate}</td>
-      <td>${total} Kč</td>
-      <td>${status}</td>
-    `;
-
-    row.addEventListener("click", () => {
-      const invoiceId = docSnap.id;
-      window.location.href = `invoicedetails.html?invoiceId=${invoiceId}`;
+  allInvoices = [];
+  snapshot.forEach(doc => {
+    const invoice = doc.data();
+    allInvoices.push({
+      id: doc.id,
+      client: invoice.client.firstName + " " + invoice.client.lastName,
+      issueDate: invoice.issueDate || "",
+      dueDate: invoice.dueDate || "",
+      total: invoice.total ? invoice.total : 0,
+      status: invoice.status || "unpaid"
     });
-
-    invoiceTableBody.appendChild(row);
   });
 }
-  
+
+/* ------------------ RENDER TABLE ------------------ */
+function renderTable() {
+  const filters = getFilters();
+  let rows = allInvoices.filter(inv => passFilters(inv, filters));
+
+  if (currentSort.column) {
+    rows.sort((a, b) => {
+      let v1 = a[currentSort.column];
+      let v2 = b[currentSort.column];
+
+      // numeric sort for total
+      if (currentSort.column === "total") {
+        return (v1 - v2) * currentSort.direction;
+      }
+      return v1.localeCompare(v2) * currentSort.direction;
+    });
+  }
+
+  invoiceTableBody.innerHTML = "";
+
+  rows.forEach(inv => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${inv.client}</td>
+      <td>${inv.issueDate}</td>
+      <td>${inv.dueDate}</td>
+      <td>${inv.total.toFixed(2)} Kč</td>
+      <td>${inv.status}</td>
+    `;
+    tr.addEventListener("click", () => {
+      window.location.href = `invoicedetails.html?invoiceId=${inv.id}`;
+    });
+    invoiceTableBody.appendChild(tr);
+  });
+}
+
+/* ------------------ FILTERS ------------------ */
+function getFilters() {
+  return [...document.querySelectorAll(".filter-row input")].reduce((obj, el) => {
+    obj[el.dataset.filter] = el.value.toLowerCase();
+    return obj;
+  }, {});
+}
+
+function passFilters(inv, filters) {
+  return Object.keys(filters).every(key =>
+    inv[key].toString().toLowerCase().includes(filters[key])
+  );
+}
+
+document.querySelectorAll(".filter-row input").forEach(el => {
+  el.addEventListener("input", renderTable);
+});
+
+/* ------------------ SORTING ------------------ */
+document.querySelectorAll("th[data-column]").forEach(th => {
+  th.style.cursor = "pointer";
+  th.addEventListener("click", () => {
+    const col = th.dataset.column;
+
+    if (currentSort.column === col) {
+      currentSort.direction *= -1; // toggle
+    } else {
+      currentSort.column = col;
+      currentSort.direction = 1;
+    }
+    renderTable();
+  });
+});
 </script>
 
 </body>
