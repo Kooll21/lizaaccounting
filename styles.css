@@ -69,11 +69,11 @@ nav #logoutBtn:hover {
 
 
 .auth-only {
-  display: none !important;
+  display: none;
 }
 
 .guest-only {
-  display: none !important;
+  display: none;
 }
 
 
