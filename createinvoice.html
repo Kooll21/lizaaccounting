@@ -100,9 +100,15 @@
 <button id="createInvoiceBtn">Vytvořit fakturu</button>
 <p id="invoiceStatusMessage"></p>
 </div>
+ 
 <script type="module">
 
-
+import {
+  auth, db,
+  onAuthStateChanged,
+  collection, doc, getDoc, getDocs, setDoc, addDoc
+} from "./firebase.js";
+ 
 
 let items = [];
 let serviceTemplates = {};
@@ -263,6 +269,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
 
 
