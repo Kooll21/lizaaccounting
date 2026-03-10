@@ -102,7 +102,12 @@
 </div>
  
 <script type="module">
-
+import {
+  auth, db,
+  onAuthStateChanged,
+  collection, doc, getDoc, getDocs, setDoc, addDoc
+} from "./firebase.js";
+ 
 import { auth, db, doc, getDoc } from "./firebase.js";
 
 async function loadCopiedInvoice() {
@@ -307,6 +312,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
 
 
