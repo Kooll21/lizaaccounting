@@ -35,11 +35,14 @@ function wireLogout() {
   });
 }
 
+
 export function initNavAuth() {
-  // Ждём восстановления сессии и меняем видимость
   onAuthStateChanged(auth, (user) => {
     updateMenu(user);
+    document.body.classList.add("nav-ready");
   });
-  // Навешиваем обработчик кнопки
+
   wireLogout();
 }
+
+
