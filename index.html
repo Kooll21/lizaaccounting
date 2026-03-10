@@ -1,91 +1,192 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liza Accounting – Moderní online fakturace</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Liza Accounting – Moderní online fakturace</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<!-- NAVBAR -->
-<header class="navbar">
-    <div class="logo">Liza<span>Accounting</span></div>
- <nav>
-  <a href="index.html">Úvod</a>
-  <a href="createinvoice.html">Nová faktura</a>
-  <a href="invoicelist.html">Seznam faktur</a>
-  <a href="admin.html" class="nav-link" style="color:white;text-decoration:none;">Můj profil</a>
-<button id="logoutBtn">Odhlásit</button>
-</nav>
-    
-</header>
+  <!-- NAV -->
+  <nav>
+    <a href="#hero">Domů</a>
+    <a href="#features">Funkce</a>
+    <a href="#how">Jak to funguje</a>
+    <a href="#pricing">Ceník</a>
+    <a href="login.html" style="margin-left:auto;">Přihlášení</a>
+    <a href="register.html">Registrace</a>
+  </nav>
 
-<!-- HERO SECTION -->
-<section class="hero">
-    <div class="hero-content">
-        <h1>Online fakturace, která vám šetří čas</h1>
-        <p>Vystavujte faktury během několika sekund. Jednoduše, rychle a zdarma.
-           Perfektní pro OSVČ, malé firmy a freelancery.</p>
+  <!-- HERO -->
+  <section id="hero" class="section-card">
+    <h2>Online fakturace, která šetří váš čas</h2>
+    <p>
+      Vystavujte faktury za pár sekund. Automatické DPH podle profilu, uložení klientů a služeb,
+      export do PDF a přehled plateb – vše na jednom místě.
+    </p>
+    <div class="summary">
+      <p>Neomezené faktury</p>
+      <p>Automatické DPH</p>
+      <p>PDF Export</p>
+      <p>Přehled plateb</p>
+    </div>
+    <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="register.html"><button>Začít zdarma</button></a>
+      <a href="#features"><button style="background:#1f6391;">Zjistit více</button></a>
+    </div>
+  </section>
 
-        <div class="hero-buttons">
-            <a href="register.html" class="cta-btn">Začít zdarma</a>
-            <a href="#features" class="secondary-btn">Více informací</a>
-        </div>
+  <!-- FEATURE CARDS -->
+  <section id="features" class="section-card">
+    <h3>Co umí Liza Accounting</h3>
+    <div class="summary">
+      <p>🧾 Rychlé vystavení faktury</p>
+      <p>👥 Uložení klientů a služeb</p>
+      <p>📊 Přehled splatností</p>
+      <p>📄 Export do PDF</p>
+      <p>💳 Více způsobů platby</p>
+      <p>🔁 Opakované faktury</p>
     </div>
 
-    <div class="hero-image">
-        <img src="hero-dashboard.png" alt="Dashboard ukázka">
+    <div style="display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); margin-top:10px;">
+      <div class="section-card" style="margin:0;">
+        <h3>Bleskové formuláře</h3>
+        <p>Inteligentní doplňování údajů, šablony služeb a klientů, okamžité součty.</p>
+      </div>
+      <div class="section-card" style="margin:0;">
+        <h3>Automatické DPH</h3>
+        <p>Pokud jste <b>Plátce DPH</b>, systém nastaví 21 %. Pokud <b>Neplátce</b>, tak 0 %.</p>
+      </div>
+      <div class="section-card" style="margin:0;">
+        <h3>Platby a statusy</h3>
+        <p>Sledování splatnosti, statusů (unpaid/paid) a základní statistiky.</p>
+      </div>
     </div>
-</section>
+  </section>
 
-<!-- FEATURES -->
-<section id="features" class="features">
-    <h2>Co vám Liza Accounting nabízí?</h2>
+  <!-- HOW IT WORKS -->
+  <section id="how" class="section-card">
+    <h3>Jak to funguje</h3>
+    <ol style="padding-left:18px; margin:0;">
+      <li>Přihlásíte se nebo vytvoříte účet.</li>
+      <li>Vyplníte klienta a položky (nebo vyberete ze šablon).</li>
+      <li>Systém nastaví DPH podle vašeho profilu (Plátce/Neplátce).</li>
+      <li>Vytvoříte fakturu a stáhnete ji do PDF.</li>
+    </ol>
 
-    <div class="features-grid">
-        <div class="feature-card">
-            <h3>Bleskové vystavení faktury</h3>
-            <p>Jednoduchý formulář, inteligentní doplňování údajů, automatické DPH.</p>
-        </div>
-        <div class="feature-card">
-            <h3>Uložení klientů a služeb</h3>
-            <p>Opakované faktury? Všechno se uloží a příště máte hotovo za pár sekund.</p>
-        </div>
-        <div class="feature-card">
-            <h3>Přehled o platbách</h3>
-            <p>Nezaplacené faktury, splatnost, automatické součty – máte vše pod kontrolou.</p>
-        </div>
-        <div class="feature-card">
-            <h3>Export do PDF</h3>
-            <p>Tisk, sdílení e‑mailem nebo archivace jedním kliknutím.</p>
-        </div>
+    <div style="margin-top:15px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Krok</th>
+            <th>Co získáte</th>
+            <th>Čas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Registrace</td>
+            <td>Váš profil a nastavení DPH</td>
+            <td>1 min</td>
+          </tr>
+          <tr>
+            <td>První faktura</td>
+            <td>Rychlé položky + uložené šablony</td>
+            <td>1–2 min</td>
+          </tr>
+          <tr>
+            <td>Export</td>
+            <td>PDF připravené k odeslání</td>
+            <td>Okamžitě</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-</section>
+  </section>
 
-<!-- PRICING -->
-<section class="pricing">
-    <h2>Ceník</h2>
+  <!-- PRICING -->
+  <section id="pricing" class="section-card">
+    <h3>Ceník</h3>
     <p>Začněte zdarma. Plaťte až když budete chtít více funkcí.</p>
-
-    <div class="pricing-box">
+    <div style="display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); margin-top:10px;">
+      <div class="section-card" style="margin:0;">
         <h3>Zdarma</h3>
-        <p class="price">0 Kč / měsíc</p>
-        <ul>
-            <li>Neomezené faktury</li>
-            <li>Uložení klientů</li>
-            <li>PDF export</li>
-            <li>Základní statistiky</li>
+        <ul style="margin-top:10px; padding-left:18px;">
+          <li>Neomezené faktury</li>
+          <li>Uložení klientů a služeb</li>
+          <li>PDF export</li>
+          <li>Základní přehled</li>
         </ul>
-        <a href="register.html" class="cta-btn">Vytvořit účet</a>
+        <a href="register.html"><button>Vytvořit účet</button></a>
+      </div>
+      <div class="section-card" style="margin:0;">
+        <h3>Pro (volitelně)</h3>
+        <ul style="margin-top:10px; padding-left:18px;">
+          <li>Opakované faktury</li>
+          <li>Automatické upomínky</li>
+          <li>Logo a vlastní číslování</li>
+          <li>Priority podpora</li>
+        </ul>
+        <button disabled>Již brzy</button>
+      </div>
     </div>
-</section>
+  </section>
 
-<!-- FOOTER -->
-<footer class="footer">
-    <p>© 2026 Liza Accounting — Moderní fakturace pro každého</p>
-</footer>
+  <!-- CTA -->
+  <section class="section-card">
+    <h3>Připraveni začít?</h3>
+    <p>Registrace zabere minutu. První fakturu vystavíte za dvě.</p>
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="register.html"><button>Začít zdarma</button></a>
+      <a href="login.html"><button style="background:#1f6391;">Přihlásit se</button></a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <section class="section-card" style="text-align:center;">
+    <p>© 2026 Liza Accounting — Moderní fakturace pro freelancery a malé firmy</p>
+  </section>
+
+  <!-- Smooth scroll + active nav -->
+  <script>
+    // Плавная прокрутка для якорей
+    document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = a.getAttribute('href').slice(1);
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Подсветка активного пункта меню при скролле
+    const sections = ['hero','features','how','pricing']
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    const navLinks = Array.from(document.querySelectorAll('nav a[href^="#"]'));
+
+    const updateActive = () => {
+      let currentId = null;
+      const scrollY = window.scrollY + 120; // offset под фикс. хедер (если будет)
+
+      sections.forEach(sec => {
+        const top = sec.offsetTop;
+        const bottom = top + sec.offsetHeight;
+        if (scrollY >= top && scrollY < bottom) currentId = sec.id;
+      });
+
+      navLinks.forEach(link => {
+        const isActive = link.getAttribute('href') === '#' + currentId;
+        link.style.textDecoration = isActive ? 'underline' : 'none';
+      });
+    };
+
+    window.addEventListener('scroll', updateActive);
+    window.addEventListener('load', updateActive);
+  </script>
 
 </body>
 </html>
