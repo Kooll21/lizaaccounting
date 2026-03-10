@@ -1,5 +1,4 @@
-<!-- firebase.js -->
-<script type="module">
+// firebase.js
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
@@ -12,7 +11,5 @@ const firebaseConfig = {
   appId: "1:407944794362:web:c646f7670a8717a3fab943"
 };
 
-// Если уже инициализирован → берём существующий инстанс
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-</script>
