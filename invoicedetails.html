@@ -182,13 +182,13 @@ async function loadInvoice() {
     const total = item.total || (item.quantity * item.price * (1 - item.discount/100));
     subtotal += total;
     const row = document.createElement("tr");
-    row.innerHTML = 
-      <td><input value="${item.name}"></td>
-      <td><input type="number" value="${item.quantity}"></td>
-      <td><input type="number" value="${item.price}"></td>
-      <td><input type="number" value="${item.discount || 0}"></td>
-      <td class="rowTotal">${total.toFixed(2)}</td>
-    ;
+row.innerHTML = `
+  <td><input value="${item.name}"></td>
+  <td><input type="number" value="${item.quantity}"></td>
+  <td><input type="number" value="${item.price}"></td>
+  <td><input type="number" value="${item.discount || 0}"></td>
+  <td class="rowTotal">${total.toFixed(2)}</td>
+`;
     itemsTableBody.appendChild(row);
   });
 
@@ -428,13 +428,13 @@ function recalcTotals() {
 function addItemRow(name, quantity, price, discount) {
   const total = quantity * price * (1 - discount / 100);
   const row = document.createElement("tr");
-  row.innerHTML = 
-    <td><input value="${name}"></td>
-    <td><input type="number" value="${quantity}"></td>
-    <td><input type="number" value="${price}"></td>
-    <td><input type="number" value="${discount}"></td>
-    <td class="rowTotal">${total.toFixed(2)}</td>
-  ;
+  row.innerHTML = `
+  <td><input value="${name}"></td>
+  <td><input type="number" value="${quantity}"></td>
+  <td><input type="number" value="${price}"></td>
+  <td><input type="number" value="${discount}"></td>
+  <td class="rowTotal">${total.toFixed(2)}</td>
+`;
   itemsTableBody.appendChild(row);
   recalcTotals();
 }
@@ -455,4 +455,5 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
