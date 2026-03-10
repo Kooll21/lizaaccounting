@@ -297,13 +297,13 @@ document.getElementById("downloadPdfBtn").addEventListener("click", () => {
     const discount = Number(inputs[3].value) || 0;
     const total = (quantity * price * (1 - discount / 100)).toFixed(2);
 
-    const rowData = [
-      name,
-      { text: quantity, alignment:'right' },
-      { text: price, alignment:'right' }
-    ];
-    if (hasDiscount) rowData.push(discount > 0 ? discount : '');
-    rowData.push({ text: total, alignment:'right' });
+const rowData = [
+  name,
+  { text: quantity, alignment:'right' },
+  { text: price.toFixed(2) + ' Kč', alignment:'right' } // цена с валютой
+];
+if (hasDiscount) rowData.push(discount > 0 ? discount : '');
+rowData.push({ text: total.toFixed(2) + ' Kč', alignment:'right' }); // итого с валютой
 
     tableBody.push(rowData);
   });
@@ -459,6 +459,7 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
 
