@@ -107,92 +107,148 @@ import {
   onAuthStateChanged,
   collection, doc, getDoc, getDocs, setDoc, addDoc
 } from "./firebase.js";
- 
-import { auth, db, doc, getDoc } from "./firebase.js";
 
+/* ---------------- GLOBAL ---------------- */
+let items = [];
+let serviceTemplates = {};
+
+/* ---------- Date fix helper ---------- */
+function fixDate(d) {
+  if (!d) return "";
+  if (typeof d === "string") return d;
+  if (d.toDate) return d.toDate().toISOString().slice(0, 10);
+  return "";
+}
+
+/* ---------------- LOAD COPIED INVOICE ---------------- */
 async function loadCopiedInvoice() {
   const params = new URLSearchParams(window.location.search);
   const copyId = params.get("copyId");
-  if (!copyId) return; // не копирование
+  if (!copyId) return;
 
   const user = auth.currentUser;
   if (!user) return;
 
   const invoiceRef = doc(db, "users", user.uid, "invoices", copyId);
   const snap = await getDoc(invoiceRef);
-
   if (!snap.exists()) return;
 
   const data = snap.data();
 
-  // Заполнение полей
-  document.getElementById("invoiceNumber").value = data.invoiceNumber + "-copy";
-  document.getElementById("issueDate").value = data.issueDate;
-  document.getElementById("dueDate").value = data.dueDate;
-  document.getElementById("paymentMethod").value = data.paymentMethod;
+  document.getElementById("invoiceNumber").value =
+    (data.invoiceNumber || "") + "-copy";
 
-  // клиент
-  document.getElementById("firstName").value = data.client.firstName;
-  document.getElementById("lastName").value = data.client.lastName;
-  document.getElementById("company").value = data.client.company;
-  document.getElementById("street").value = data.client.street;
-  document.getElementById("city").value = data.client.city;
-  document.getElementById("zip").value = data.client.zip;
-  document.getElementById("country").value = data.client.country;
-  document.getElementById("vatId").value = data.client.vatId;
+  document.getElementById("issueDate").value = fixDate(data.issueDate);
+  document.getElementById("dueDate").value  = fixDate(data.dueDate);
+  document.getElementById("paymentMethod").value = data.paymentMethod || "Převodem na účet";
 
-  // услуги
-  items = data.items || [];
+  const client = data.client || {};
+  document.getElementById("firstName").value = client.firstName || "";
+  document.getElementById("lastName").value  = client.lastName  || "";
+  document.getElementById("company").value   = client.company   || "";
+  document.getElementById("street").value    = client.street    || "";
+  document.getElementById("city").value      = client.city      || "";
+  document.getElementById("zip").value       = client.zip       || "";
+  document.getElementById("country").value   = client.country   || "";
+  document.getElementById("vatId").value     = client.vatId     || "";
+
+  items = Array.isArray(data.items) ? data.items : [];
   renderItems();
 }
 
-// запускаем после авторизации
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-  await loadCopiedInvoice();
-});
- 
-
-let items = [];
-let serviceTemplates = {};
-
+/* ---------------- ITEMS RENDER ---------------- */
 function renderItems() {
   const tbody = document.querySelector("#itemsTable tbody");
   tbody.innerHTML = "";
   items.forEach((item, index) => {
-    tbody.innerHTML += `<tr>
-      <td>${item.name}</td>
-      <td>${item.quantity}</td>
-      <td>${item.price.toFixed(2)} Kč</td>
-      <td>${item.discount}%</td>
-      <td>${item.total.toFixed(2)} Kč</td>
-      <td><button onclick="removeItem(${index})">X</button></td>
-    </tr>`;
+    tbody.innerHTML += `
+      <tr>
+        <td>${item.name}</td>
+        <td>${item.quantity}</td>
+        <td>${item.price.toFixed(2)} Kč</td>
+        <td>${item.discount}%</td>
+        <td>${item.total.toFixed(2)} Kč</td>
+        <td><button onclick="removeItem(${index})">X</button></td>
+      </tr>`;
   });
   calculateTotals();
 }
+
+window.removeItem = function(index) {
+  items.splice(index, 1);
+  renderItems();
+};
 
 function calculateTotals() {
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const vatPercent = Number(document.getElementById("vatPercent").value) || 0;
   const vatAmount = subtotal * vatPercent / 100;
   const total = subtotal + vatAmount;
+
   document.getElementById("subtotal").textContent = subtotal.toFixed(2) + " Kč";
   document.getElementById("vatAmount").textContent = vatAmount.toFixed(2) + " Kč";
   document.getElementById("totalAmount").textContent = total.toFixed(2) + " Kč";
 }
 
-window.removeItem = function(index) { items.splice(index,1); renderItems(); }
+/* ---------------- AUTH + LOAD DATA ---------------- */
 
+onAuthStateChanged(auth, async (user) => {
+  const status = document.getElementById("authStatus");
+
+  if (!user) {
+    status.textContent = "Nepřihlášen";
+    return;
+  }
+
+  status.textContent = "Přihlášen jako: " + user.email;
+
+  /* 1) Load user DPH */
+  const userDocRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userDocRef);
+
+  if (userSnap.exists()) {
+    const d = userSnap.data();
+    document.getElementById("vatPercent").value =
+      d.DPHstatus === "Plátce DPH" ? 21 : 0;
+    calculateTotals();
+  }
+
+  /* 2) Load service templates */
+  const servicesCol = collection(db, "users", user.uid, "services");
+  const snapshot = await getDocs(servicesCol);
+
+  serviceTemplates = {};
+  const select = document.getElementById("serviceTemplate");
+  select.innerHTML = `<option value="">-- vyber službu --</option>`;
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    serviceTemplates[docSnap.id] = data;
+
+    const opt = document.createElement("option");
+    opt.value = docSnap.id;
+    opt.textContent = `${data.servicename} (${data.price} Kč)`;
+    select.appendChild(opt);
+  });
+
+  /* 3) Load copied invoice (if copyId exists) */
+  await loadCopiedInvoice();
+});
+
+/* ---------------- ADD SERVICE ITEM ---------------- */
 document.getElementById("addItemBtn").addEventListener("click", () => {
   const name = document.getElementById("serviceName").value.trim();
   const qty = Number(document.getElementById("serviceQty").value);
   const price = Number(document.getElementById("servicePrice").value);
   const discount = Number(document.getElementById("serviceDiscount").value) || 0;
+
   if (!name || !price) return;
+
   const total = qty * price * (1 - discount / 100);
+
   items.push({ name, quantity: qty, price, discount, total });
   renderItems();
+
   document.getElementById("serviceName").value = "";
   document.getElementById("serviceQty").value = 1;
   document.getElementById("servicePrice").value = "";
@@ -201,46 +257,11 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 
 document.getElementById("vatPercent").addEventListener("input", calculateTotals);
 
-onAuthStateChanged(auth, async (user) => {
-  const status = document.getElementById("authStatus");
-  if (!user) { status.textContent = "Nepřihlášen"; return; }
-  status.textContent = "Přihlášen jako: " + user.email;
-
- // Načíst DPH status uživatele
-  const userDocRef = doc(db, "users", user.uid);
-  const userDocSnap = await getDoc(userDocRef);
-
-  if (userDocSnap.exists()) {
-    const userData = userDocSnap.data();
-
-    if (userData.DPHstatus === "Plátce DPH") {
-      document.getElementById("vatPercent").value = 21;
-    } else {
-      document.getElementById("vatPercent").value = 0;
-    }
-
-    calculateTotals();
-  }
-
-  // načtení šablon služeb
-  const servicesCol = collection(db, "users", user.uid, "services");
-  const snapshot = await getDocs(servicesCol);
-  serviceTemplates = {};
-  const select = document.getElementById("serviceTemplate");
-  select.innerHTML = `<option value="">-- vyber službu --</option>`;
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    serviceTemplates[doc.id] = data;
-    const opt = document.createElement("option");
-    opt.value = doc.id;
-    opt.textContent = `${data.servicename} (${data.price} Kč)`;
-    select.appendChild(opt);
-  });
-});
-
+/* ---------------- LOAD TEMPLATE INTO FORM ---------------- */
 document.getElementById("loadServiceBtn").addEventListener("click", () => {
   const serviceId = document.getElementById("serviceTemplate").value;
   if (!serviceId) return;
+
   const service = serviceTemplates[serviceId];
   document.getElementById("serviceName").value = service.servicename;
   document.getElementById("servicePrice").value = service.price;
@@ -248,62 +269,88 @@ document.getElementById("loadServiceBtn").addEventListener("click", () => {
   document.getElementById("serviceDiscount").value = 0;
 });
 
+/* ---------------- SAVE SERVICE TEMPLATE ---------------- */
 document.getElementById("saveServiceTemplateBtn").addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return;
+
   const name = document.getElementById("serviceName").value.trim();
   const price = Number(document.getElementById("servicePrice").value);
-  if (!name || isNaN(price)) { alert("Vyplňte název a cenu služby"); return; }
-  const serviceId = crypto.randomUUID();
-  await setDoc(doc(db, "users", user.uid, "services", serviceId), { servicename:name, price:price });
-  alert("Služba byla uložena do šablon");
-  // obnovit dropdown
+
+  if (!name || isNaN(price)) {
+    alert("Vyplňte název a cenu služby");
+    return;
+  }
+
+  const id = crypto.randomUUID();
+  await setDoc(doc(db, "users", user.uid, "services", id), {
+    servicename: name,
+    price: price
+  });
+
+  alert("Služba byla uložena");
+
+  // reload templates
   const servicesCol = collection(db, "users", user.uid, "services");
   const snapshot = await getDocs(servicesCol);
   serviceTemplates = {};
+
   const select = document.getElementById("serviceTemplate");
   select.innerHTML = `<option value="">-- vyber službu --</option>`;
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    serviceTemplates[doc.id] = data;
+
+  snapshot.forEach(docSnap => {
+    const d = docSnap.data();
+    serviceTemplates[docSnap.id] = d;
+
     const opt = document.createElement("option");
-    opt.value = doc.id;
-    opt.textContent = `${data.servicename} (${data.price} Kč)`;
+    opt.value = docSnap.id;
+    opt.textContent = `${d.servicename} (${d.price} Kč)`;
     select.appendChild(opt);
   });
 });
 
+/* ---------------- CREATE INVOICE ---------------- */
 document.getElementById("createInvoiceBtn").addEventListener("click", async () => {
   const user = auth.currentUser;
-  if (!user) { alert("Přihlaste se prosím"); return; }
-  const subtotal = items.reduce((sum,item)=>sum+item.total,0);
-  const vatPercent = Number(document.getElementById("vatPercent").value)||0;
-  const vatAmount = subtotal*vatPercent/100;
-  const total = subtotal+vatAmount;
+  if (!user) {
+    alert("Přihlaste se prosím");
+    return;
+  }
+
+  const subtotal = items.reduce((sum, it) => sum + it.total, 0);
+  const vatPercent = Number(document.getElementById("vatPercent").value) || 0;
+  const vatAmount = subtotal * vatPercent / 100;
+  const total = subtotal + vatAmount;
+
   const clientData = {
     firstName: document.getElementById("firstName").value,
-    lastName: document.getElementById("lastName").value,
-    company: document.getElementById("company").value,
-    street: document.getElementById("street").value,
-    city: document.getElementById("city").value,
-    zip: document.getElementById("zip").value,
-    country: document.getElementById("country").value,
-    vatId: document.getElementById("vatId").value
+    lastName:  document.getElementById("lastName").value,
+    company:   document.getElementById("company").value,
+    street:    document.getElementById("street").value,
+    city:      document.getElementById("city").value,
+    zip:       document.getElementById("zip").value,
+    country:   document.getElementById("country").value,
+    vatId:     document.getElementById("vatId").value
   };
+
   const invoiceData = {
     invoiceNumber: document.getElementById("invoiceNumber").value,
-    issueDate: document.getElementById("issueDate").value,
-    dueDate: document.getElementById("dueDate").value,
-    client: clientData,
+    issueDate:     document.getElementById("issueDate").value,
+    dueDate:       document.getElementById("dueDate").value,
+    client:        clientData,
     items,
     subtotal, vatPercent, vatAmount, total,
-    currency:"CZK",
+    currency: "CZK",
     paymentMethod: document.getElementById("paymentMethod").value,
-    status:"unpaid",
+    status: "unpaid",
     createdAt: new Date()
   };
-  await addDoc(collection(db,"users",user.uid,"invoices"),invoiceData);
-  document.getElementById("invoiceStatusMessage").textContent = "Faktura byla vytvořena ?";
+
+  await addDoc(collection(db, "users", user.uid, "invoices"), invoiceData);
+
+  document.getElementById("invoiceStatusMessage").textContent =
+    "Faktura byla vytvořena ✔️";
+
   items = [];
   renderItems();
 });
@@ -312,6 +359,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
 
 
