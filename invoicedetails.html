@@ -350,7 +350,12 @@ IČ/DIČ: ${clientVAT}
         margin:[0,0,0,20]
       },
       {
-        table:{ headerRows:1, widths: hasDiscount ? ['*','auto','auto','auto','auto'] : ['*','auto','auto','auto'], body: tableBody },
+        table: { 
+  headerRows: 1, 
+  widths: hasDiscount 
+    ? ['*', 50, 70, 50, 70] // '*' = название услуги, числа фиксированные
+    : ['*', 50, 70, 50] 
+}
         layout:'lightHorizontalLines',
         margin:[0,10,0,20]
       },
@@ -459,6 +464,7 @@ document.getElementById("addItemBtn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
 
 
