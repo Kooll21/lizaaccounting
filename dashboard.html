@@ -69,23 +69,23 @@
     }
 </style>
 
-<!-- Navigation placed here -->
-<div id="nav-container"></div>
-
-<script type="module">
-    const container = document.getElementById("nav-container");
-    const html = await fetch("nav.html").then(r => r.text());
-    container.innerHTML = html;
-
-    const { initNavAuth } = await import("./nav.js");
-    initNavAuth();
-</script>
-
-</head>
 
 <body>
 
+<!-- Навигация здесь — ПРАВИЛЬНО -->
+<div id="nav-container"></div>
+
+<script type="module">
+  const container = document.getElementById("nav-container");
+  const html = await fetch("nav.html").then(r => r.text());
+  container.innerHTML = html;
+
+  const { initNavAuth } = await import("./nav.js");
+  initNavAuth();
+</script>
+
 <h2>Dashboard</h2>
+
 <p id="authStatus"></p>
 
 <div class="dashboard-container">
