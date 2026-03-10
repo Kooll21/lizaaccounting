@@ -1,46 +1,51 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+// nav.js
+import { auth } from "./firebase.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
-  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
-  projectId: "lizaaccounting-d48b7",
-  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
-  messagingSenderId: "407944794362",
-  appId: "1:407944794362:web:c646f7670a8717a3fab943"
-};
+function setDisplay(el, value) {
+  if (el) el.style.display = value;
+}
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-document.addEventListener("DOMContentLoaded", () => {
-  
+function updateMenu(user) {
   const authOnly = document.querySelectorAll(".auth-only");
   const guestOnly = document.querySelectorAll(".guest-only");
+  const loginLink = document.getElementById("loginLink");
+  const registerLink = document.getElementById("registerLink");
+
+  if (user) {
+    // Показать авторизованным
+    authOnly.forEach(el => setDisplay(el, "inline-block"));
+    // Скрыть гостевые
+    guestOnly.forEach(el => setDisplay(el, "none"));
+  } else {
+    // Скрыть авторизованные
+    authOnly.forEach(el => setDisplay(el, "none"));
+    // Показать гостевые
+    guestOnly.forEach(el => setDisplay(el, "inline-block"));
+  }
+}
+
+function wireLogout() {
   const logoutBtn = document.getElementById("logoutBtn");
-
-  // defaultně schovat auth-only
-  authOnly.forEach(el => el.style.display = "none");
-
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // Uživatel je přihlášen
-      authOnly.forEach(el => el.style.display = "inline-block");
-      guestOnly.forEach(el => el.style.display = "none");
-    } else {
-      // Uživatel není přihlášen
-      authOnly.forEach(el => el.style.display = "none");
-      guestOnly.forEach(el => el.style.display = "inline-block");
+  if (!logoutBtn) return;
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+      // Дополнительно: почистить UI сразу
+      updateMenu(null);
+      window.location.href = "login.html";
+    } catch (e) {
+      console.error("Logout failed:", e);
+      alert("Nepodařilo se odhlásit. Zkuste to prosím znovu.");
     }
   });
+}
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-      window.location.href = "login.html";
-    });
-  }
-});
-
-
+export function initNavAuth() {
+  // Ждём восстановления сессии и меняем видимость
+  onAuthStateChanged(auth, (user) => {
+    updateMenu(user);
+  });
+  // Навешиваем обработчик кнопки
+  wireLogout();
+}
