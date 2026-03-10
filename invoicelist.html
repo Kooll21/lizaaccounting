@@ -174,7 +174,7 @@ tr.innerHTML = `
   <td>${escapeHtml(inv.issueDate)}</td>
   <td>${escapeHtml(inv.dueDate)}</td>
   <td>${Number(inv.total).toFixed(2)} Kč</td>
-  <td>${escapeHtml(inv.status)}</td>
+<td>${escapeHtml(statusMap[inv.status] || inv.status)}</td>
   <td>
     <button type="button" class="copy-btn" data-id="${inv.id}" aria-label="Kopírovat fakturu">
       Kopírovat
@@ -276,6 +276,13 @@ const indicators = {
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     }
+    const statusMap = {
+  paid: "Zaplaceno",
+  unpaid: "Nezaplaceno",
+  overdue: "Po splatnosti",
+  cancelled: "Zrušeno",
+  draft: "Koncept"
+};
   </script>
 </body>
 </html>
