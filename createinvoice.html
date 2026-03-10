@@ -103,11 +103,49 @@
  
 <script type="module">
 
-import {
-  auth, db,
-  onAuthStateChanged,
-  collection, doc, getDoc, getDocs, setDoc, addDoc
-} from "./firebase.js";
+import { auth, db, doc, getDoc } from "./firebase.js";
+
+async function loadCopiedInvoice() {
+  const params = new URLSearchParams(window.location.search);
+  const copyId = params.get("copyId");
+  if (!copyId) return; // не копирование
+
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const invoiceRef = doc(db, "users", user.uid, "invoices", copyId);
+  const snap = await getDoc(invoiceRef);
+
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  // Заполнение полей
+  document.getElementById("invoiceNumber").value = data.invoiceNumber + "-copy";
+  document.getElementById("issueDate").value = data.issueDate;
+  document.getElementById("dueDate").value = data.dueDate;
+  document.getElementById("paymentMethod").value = data.paymentMethod;
+
+  // клиент
+  document.getElementById("firstName").value = data.client.firstName;
+  document.getElementById("lastName").value = data.client.lastName;
+  document.getElementById("company").value = data.client.company;
+  document.getElementById("street").value = data.client.street;
+  document.getElementById("city").value = data.client.city;
+  document.getElementById("zip").value = data.client.zip;
+  document.getElementById("country").value = data.client.country;
+  document.getElementById("vatId").value = data.client.vatId;
+
+  // услуги
+  items = data.items || [];
+  renderItems();
+}
+
+// запускаем после авторизации
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  await loadCopiedInvoice();
+});
  
 
 let items = [];
@@ -269,6 +307,7 @@ document.getElementById("createInvoiceBtn").addEventListener("click", async () =
 </body>
 
 </html>
+
 
 
 
