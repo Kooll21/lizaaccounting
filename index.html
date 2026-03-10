@@ -11,14 +11,17 @@
 
   <!-- NAV -->
 <div id="nav-container"></div>
+
 <script>
   fetch("nav.html")
     .then(res => res.text())
     .then(html => {
       document.getElementById("nav-container").innerHTML = html;
+
+      // Po vložení menu načteme autentizační logiku
+      import("./nav.js");
     });
 </script>
-  <script type="module" src="nav.js"></script>
 
   <!-- HERO -->
   <section id="hero" class="section-card">
