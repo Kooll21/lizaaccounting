@@ -1,194 +1,255 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8">
-<title>Seznam faktur</title>
-   <link rel="stylesheet" href="styles.css">
-  <div id="nav-container"></div>
+  <meta charset="UTF-8">
+  <title>Seznam faktur</title>
+  <link rel="stylesheet" href="styles.css">
 
+
+  <!-- Вставка навигации -->
+  <div id="nav-container"></div>
   <script type="module">
     const container = document.getElementById("nav-container");
     const html = await fetch("nav.html").then(r => r.text());
     container.innerHTML = html;
 
-    // После того как HTML меню вставлен — подключаем логику
     const { initNavAuth } = await import("./nav.js");
     initNavAuth();
+
+    // Подсветка активной ссылки (выполняем после вставки nav)
+    const links = document.querySelectorAll(".nav-link");
+    links.forEach(link => {
+      try {
+        if (new URL(link.href).pathname === window.location.pathname) {
+          link.style.fontWeight = "bold";
+          link.style.textDecoration = "underline";
+        }
+      } catch (_) {}
+    });
   </script>
-   
-<hr>
-
-<script>
-// Подсветка активной ссылки
-const links = document.querySelectorAll(".nav-link");
-links.forEach(link => {
-  if (link.href === window.location.href) {
-    link.style.fontWeight = "bold";
-    link.style.textDecoration = "underline";
-  }
-});
-</script>
-
+  <hr>
 </head>
 <body>
 
-<h2>Seznam faktur</h2>
-<p id="authStatus"></p>
-<h2>Seznam faktur</h2>
-<p id="authStatus"></p>
+  <h2>Seznam faktur</h2>
+  <p id="authStatus"></p>
 
-<table id="invoiceTable">
-  <thead>
-    <tr>
-      <th data-column="client">Klient</th>
-      <th data-column="issueDate">Datum vystavení</th>
-      <th data-column="dueDate">Datum splatnosti</th>
-      <th data-column="total">Celkem (Kč)</th>
-      <th data-column="status">Status</th>
-    </tr>
-    <tr class="filter-row">
-      <th><input type="text" data-filter="client" placeholder="Hledat…"></th>
-      <th><input type="text" data-filter="issueDate" placeholder="YYYY-MM-DD"></th>
-      <th><input type="text" data-filter="dueDate" placeholder="YYYY-MM-DD"></th>
-      <th><input type="text" data-filter="total" placeholder="Částka"></th>
-      <th><input type="text" data-filter="status" placeholder="Status"></th>
-    </tr>
-  </thead>
-  <tbody id="invoiceTableBody"></tbody>
-</table>
+  <table id="invoiceTable" aria-label="Seznam faktur">
+    <thead>
+      <tr>
+        <th data-column="client" role="button" tabindex="0">Klient <span class="sort-indicator" id="sort-client"></span></th>
+        <th data-column="issueDate" role="button" tabindex="0">Datum vystavení <span class="sort-indicator" id="sort-issueDate"></span></th>
+        <th data-column="dueDate" role="button" tabindex="0">Datum splatnosti <span class="sort-indicator" id="sort-dueDate"></span></th>
+        <th data-column="total" role="button" tabindex="0">Celkem (Kč) <span class="sort-indicator" id="sort-total"></span></th>
+        <th data-column="status" role="button" tabindex="0">Status <span class="sort-indicator" id="sort-status"></span></th>
+        <th>Akce</th>
+      </tr>
+      <tr class="filter-row">
+        <th><input type="text" data-filter="client" placeholder="Hledat…"></th>
+        <th><input type="text" data-filter="issueDate" placeholder="YYYY-MM-DD"></th>
+        <th><input type="text" data-filter="dueDate" placeholder="YYYY-MM-DD"></th>
+        <th><input type="text" data-filter="total" placeholder="Částka"></th>
+        <th><input type="text" data-filter="status" placeholder="Status"></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="invoiceTableBody"></tbody>
+  </table>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+  <!-- Основной модуль страницы -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
-  authDomain: "lizaaccounting-d48b7.firebaseapp.com",
-  projectId: "lizaaccounting-d48b7",
-  storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
-  messagingSenderId: "407944794362",
-  appId: "1:407944794362:web:c646f7670a8717a3fab943"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNuCWtVCpC2HmkncirONfPEUpICHAFJc0",
+      authDomain: "lizaaccounting-d48b7.firebaseapp.com",
+      projectId: "lizaaccounting-d48b7",
+      storageBucket: "lizaaccounting-d48b7.firebasestorage.app",
+      messagingSenderId: "407944794362",
+      appId: "1:407944794362:web:c646f7670a8717a3fab943"
+    };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-const authStatus = document.getElementById("authStatus");
-const invoiceTableBody = document.getElementById("invoiceTableBody");
+    const authStatus = document.getElementById("authStatus");
+    const invoiceTableBody = document.getElementById("invoiceTableBody");
 
-let allInvoices = [];
-let currentSort = { column: null, direction: 1 };
+    let allInvoices = [];
+    let currentSort = { column: null, direction: 1 }; // 1 ASC, -1 DESC
 
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    authStatus.textContent = "Přihlášen jako: " + user.email;
-    await loadInvoices(user.uid);
-    renderTable();
-  } else {
-    authStatus.textContent = "Nepřihlášen. Prosím přihlašte se.";
-    invoiceTableBody.innerHTML = "";
-    const email = prompt("Zadejte email:");
-    const password = prompt("Zadejte heslo:");
-    if (email && password) {
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (err) {
-        alert("Chyba přihlášení: " + err.message);
+    /** ---------- Авто-логин / статус ---------- */
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        authStatus.textContent = "Přihlášen jako: " + user.email;
+        await loadInvoices(user.uid);
+        renderTable();
+      } else {
+        authStatus.textContent = "Nepřihlášen. Prosím přihlašte se.";
+        invoiceTableBody.innerHTML = "";
+        const email = prompt("Zadejte email:");
+        const password = prompt("Zadejte heslo:");
+        if (email && password) {
+          try {
+            await signInWithEmailAndPassword(auth, email, password);
+          } catch (err) {
+            alert("Chyba přihlášení: " + err.message);
+          }
+        }
+      }
+    });
+
+    /** ---------- Загрузка фактур ---------- */
+    async function loadInvoices(uid) {
+      const invoicesRef = collection(db, "users", uid, "invoices");
+      const snapshot = await getDocs(invoicesRef);
+
+      allInvoices = [];
+      snapshot.forEach(docSnap => {
+        const invoice = docSnap.data() || {};
+        const firstName = invoice.client?.firstName ?? "";
+        const lastName  = invoice.client?.lastName ?? "";
+        const clientName = [firstName, lastName].filter(Boolean).join(" ").trim() || (invoice.client?.company ?? "");
+        allInvoices.push({
+          id: docSnap.id,
+          client: clientName || "—",
+          issueDate: invoice.issueDate || "",
+          dueDate: invoice.dueDate || "",
+          total: typeof invoice.total === "number" ? invoice.total : Number(invoice.total) || 0,
+          status: invoice.status || "unpaid"
+        });
+      });
+    }
+
+    /** ---------- Рендер таблицы ---------- */
+    function renderTable() {
+      const filters = getFilters();
+      let rows = allInvoices.filter(inv => passFilters(inv, filters));
+
+      if (currentSort.column) {
+        rows.sort((a, b) => {
+          let v1 = a[currentSort.column];
+          let v2 = b[currentSort.column];
+          if (currentSort.column === "total") {
+            return (Number(v1) - Number(v2)) * currentSort.direction;
+          }
+          return String(v1).localeCompare(String(v2)) * currentSort.direction;
+        });
+      }
+
+      // Обновляем индикаторы сортировки
+      updateSortIndicators();
+
+      invoiceTableBody.innerHTML = "";
+
+      rows.forEach(inv => {
+        const tr = document.createElement("tr");
+        tr.classList.add("row-clickable");
+        tr.setAttribute("tabindex", "0"); // a11y: фокус по Tab
+        tr.innerHTML = `
+          <td>${escapeHtml(inv.client)}</td>
+          <td>${escapeHtml(inv.issueDate)}</td>
+          <td>${escapeHtml(inv.dueDate)}</td>
+          <td>${Number(inv.total).toFixed(2)} Kč</td>
+          <td>${escapeHtml(inv.status)}</td>
+          <td>
+            <button type="button" class="copy-btn" data-id="${inv.id}" aria-label="Kopírovat fakturu">Kopírovat</button>
+          </td>
+        `;
+
+        // Клик по строке — открыть детали
+        tr.addEventListener("click", () => {
+          window.location.href = `invoicedetails.html?invoiceId=${inv.id}`;
+        });
+
+        // Клавиатура: Enter/Space тоже открывают
+        tr.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            window.location.href = `invoicedetails.html?invoiceId=${inv.id}`;
+          }
+        });
+
+        // Кнопка "Kopírovat" — не даем клику всплыть до строки
+        const copyBtn = tr.querySelector(".copy-btn");
+        copyBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          window.location.href = `newinvoice.html?copyId=${inv.id}`;
+        });
+
+        invoiceTableBody.appendChild(tr);
+      });
+    }
+
+    /** ---------- Фильтры ---------- */
+    function getFilters() {
+      return [...document.querySelectorAll(".filter-row input")].reduce((obj, el) => {
+        obj[el.dataset.filter] = (el.value || "").toLowerCase();
+        return obj;
+      }, {});
+    }
+
+    function passFilters(inv, filters) {
+      return Object.keys(filters).every(key => {
+        const val = (inv[key] ?? "").toString().toLowerCase();
+        const fval = filters[key] ?? "";
+        if (!fval) return true;
+        return val.includes(fval);
+      });
+    }
+
+    document.querySelectorAll(".filter-row input").forEach(el => {
+      el.addEventListener("input", renderTable);
+    });
+
+    /** ---------- Сортировка ---------- */
+    document.querySelectorAll("th[data-column]").forEach(th => {
+      th.style.cursor = "pointer";
+      th.addEventListener("click", () => toggleSort(th.dataset.column));
+      th.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleSort(th.dataset.column);
+        }
+      });
+    });
+
+    function toggleSort(col) {
+      if (currentSort.column === col) {
+        currentSort.direction *= -1; // toggle
+      } else {
+        currentSort.column = col;
+        currentSort.direction = 1;
+      }
+      renderTable();
+    }
+
+    function updateSortIndicators() {
+      const indicators = {
+        client: document.getElementById("sort-client"),
+        issueDate: document.getElementById("sort-issueDate"),
+        dueDate: document.getElementById("sort-dueDate"),
+        total: document.getElementById("sort-total"),
+        status: document.getElementById("sort-status"),
+      };
+      Object.values(indicators).forEach(el => { if (el) el.textContent = ""; });
+      if (currentSort.column && indicators[currentSort.column]) {
+        indicators[currentSort.column].textContent = currentSort.direction === 1 ? "▲" : "▼";
       }
     }
-  }
-});
 
-async function loadInvoices(uid) {
-  const invoicesRef = collection(db, "users", uid, "invoices");
-  const snapshot = await getDocs(invoicesRef);
-
-  allInvoices = [];
-  snapshot.forEach(doc => {
-    const invoice = doc.data();
-    allInvoices.push({
-      id: doc.id,
-      client: invoice.client.firstName + " " + invoice.client.lastName,
-      issueDate: invoice.issueDate || "",
-      dueDate: invoice.dueDate || "",
-      total: invoice.total ? invoice.total : 0,
-      status: invoice.status || "unpaid"
-    });
-  });
-}
-
-/* ------------------ RENDER TABLE ------------------ */
-function renderTable() {
-  const filters = getFilters();
-  let rows = allInvoices.filter(inv => passFilters(inv, filters));
-
-  if (currentSort.column) {
-    rows.sort((a, b) => {
-      let v1 = a[currentSort.column];
-      let v2 = b[currentSort.column];
-
-      // numeric sort for total
-      if (currentSort.column === "total") {
-        return (v1 - v2) * currentSort.direction;
-      }
-      return v1.localeCompare(v2) * currentSort.direction;
-    });
-  }
-
-  invoiceTableBody.innerHTML = "";
-
-  rows.forEach(inv => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${inv.client}</td>
-      <td>${inv.issueDate}</td>
-      <td>${inv.dueDate}</td>
-      <td>${inv.total.toFixed(2)} Kč</td>
-      <td>${inv.status}</td>
-    `;
-    tr.addEventListener("click", () => {
-      window.location.href = `invoicedetails.html?invoiceId=${inv.id}`;
-    });
-    invoiceTableBody.appendChild(tr);
-  });
-}
-
-/* ------------------ FILTERS ------------------ */
-function getFilters() {
-  return [...document.querySelectorAll(".filter-row input")].reduce((obj, el) => {
-    obj[el.dataset.filter] = el.value.toLowerCase();
-    return obj;
-  }, {});
-}
-
-function passFilters(inv, filters) {
-  return Object.keys(filters).every(key =>
-    inv[key].toString().toLowerCase().includes(filters[key])
-  );
-}
-
-document.querySelectorAll(".filter-row input").forEach(el => {
-  el.addEventListener("input", renderTable);
-});
-
-/* ------------------ SORTING ------------------ */
-document.querySelectorAll("th[data-column]").forEach(th => {
-  th.style.cursor = "pointer";
-  th.addEventListener("click", () => {
-    const col = th.dataset.column;
-
-    if (currentSort.column === col) {
-      currentSort.direction *= -1; // toggle
-    } else {
-      currentSort.column = col;
-      currentSort.direction = 1;
+    /** ---------- Утилита: экранирование HTML ---------- */
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
-    renderTable();
-  });
-});
-</script>
-
+  </script>
 </body>
 </html>
